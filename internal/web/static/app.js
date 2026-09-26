@@ -377,6 +377,22 @@ function fillDecision(event) {
   const cell = row.querySelector(`[data-cell="${which}"]`);
   cell.textContent = event.decision;
   cell.className = event.decision;
+  showDecision(event);
+}
+
+// Decisions are durable in the game table, but this is the immediate cue for
+// who just acted. The feed names the winning replica, so the label appears over
+// the specific icon that earned the event rather than over both halves.
+function showDecision(event) {
+  if (!event.replica) return;
+  const replica = $(`rep-${event.strategy}-${event.replica}`);
+  if (!replica) return;
+
+  const label = document.createElement("div");
+  label.className = `decision-pop ${event.decision}`;
+  label.textContent = event.decision;
+  label.addEventListener("animationend", () => label.remove(), { once: true });
+  replica.append(label);
 }
 
 function completeGame(event) {
