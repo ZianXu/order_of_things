@@ -34,10 +34,12 @@ import (
 //go:embed static
 var assets embed.FS
 
-// pollInterval is how often the stream checks the tracker for new events. It is
-// an implementation detail of the transport: what reaches the browser is still
-// events in order, never a snapshot of aggregate state.
-const pollInterval = 40 * time.Millisecond
+// pollInterval is how often the stream checks the tracker for new events. A
+// frame-length interval keeps a beat-synced visual cue within one display frame
+// of its admission, rather than letting transport timing rotate its phase across
+// the soundtrack. What reaches the browser is still events in order, never a
+// snapshot of aggregate state.
+const pollInterval = 16 * time.Millisecond
 
 // maxBody bounds a control request. Every request this server accepts is a few
 // dozen bytes of JSON; without a bound a slow or oversized body can hold a
@@ -131,7 +133,9 @@ func (s *Server) control(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch req.Action {
-	case "start", "resume":
+	case "start":
+		handle.Session.Begin()
+	case "resume":
 		handle.Session.Resume()
 	case "pause":
 		handle.Session.Pause()

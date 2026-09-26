@@ -23,13 +23,17 @@ func main() {
 		addr     = flag.String("addr", ":8080", "address to listen on")
 		goldPath = flag.String("golden", "testdata/golden.json", "golden outcome store; empty keeps references in memory only")
 		games    = flag.Int("games", session.DefaultGames, "games per session")
-		interval = flag.Duration("interval", session.DefaultInterval, "pace of admission, one event per interval")
+		tempo    = flag.Float64("tempo", session.DefaultTempo, "soundtrack tempo in beats per minute")
 		idle     = flag.Duration("idle", 2*time.Minute, "stop sessions with no viewer for this long")
 		maxSess  = flag.Int("max-sessions", session.MaxSessions, "cap on concurrent sessions; 0 for no cap")
 		maxAge   = flag.Duration("max-age", time.Hour, "stop sessions older than this")
 		quiet    = flag.Bool("quiet", false, "suppress the platform's own logging")
 	)
 	flag.Parse()
+	if *tempo <= 0 {
+		fmt.Fprintln(os.Stderr, "tempo must be greater than zero")
+		os.Exit(2)
+	}
 
 	if *quiet {
 		log.SetOutput(io.Discard)
@@ -43,7 +47,7 @@ func main() {
 
 	registry := session.NewRegistry(store)
 	registry.SetGames(*games)
-	registry.SetInterval(*interval)
+	registry.SetTempo(*tempo)
 	registry.SetMaxSessions(*maxSess)
 	defer registry.StopAll()
 
@@ -58,7 +62,7 @@ func main() {
 	}
 
 	// A viewer who closes the tab leaves a session running at one event per
-	// second forever, so idle ones are reclaimed on a timer.
+	// beat forever, so idle ones are reclaimed on a timer.
 	go reclaim(ctx, registry, *idle, *maxAge)
 
 	server := &http.Server{
@@ -81,8 +85,8 @@ func main() {
 		_ = server.Shutdown(shutdown)
 	}()
 
-	fmt.Fprintf(os.Stderr, "the order of things: http://localhost%s  (%d games, %v per event)\n",
-		*addr, *games, *interval)
+	fmt.Fprintf(os.Stderr, "the order of things: http://localhost%s  (%d games, %.0f BPM)\n",
+		*addr, *games, *tempo)
 
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		fmt.Fprintln(os.Stderr, err)

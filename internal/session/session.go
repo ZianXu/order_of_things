@@ -559,6 +559,10 @@ func (s *Session) Pause() { s.pacer.Pause() }
 // Resume releases event admission.
 func (s *Session) Resume() { s.pacer.Resume() }
 
+// Begin releases a newly created session's first action immediately, then
+// continues at its configured pace.
+func (s *Session) Begin() { s.pacer.Begin() }
+
 // Step admits exactly one event and leaves the session paused.
 func (s *Session) Step() { s.pacer.Step() }
 

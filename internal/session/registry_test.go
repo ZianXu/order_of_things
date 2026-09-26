@@ -130,6 +130,15 @@ func TestPrepareGeneratesTheCanonicalChainUpFront(t *testing.T) {
 	}
 }
 
+func TestIntervalForTempo(t *testing.T) {
+	if got, want := session.IntervalForTempo(120), 500*time.Millisecond; got != want {
+		t.Errorf("IntervalForTempo(120) = %v, want %v", got, want)
+	}
+	if got, want := session.IntervalForTempo(session.DefaultTempo), session.DefaultInterval; got != want {
+		t.Errorf("IntervalForTempo(DefaultTempo) = %v, want %v", got, want)
+	}
+}
+
 // Every session gets a canonical chain, whatever seed it drew, because creating
 // one generates the reference first. Without that, only pre-chosen seeds could
 // validate a restarting replica.

@@ -64,8 +64,10 @@ function start(session) {
 
   buildPlayers();
   connect();
-  control("start");
-  startMusic();
+  // The server's first admission is immediate, so wait until audio playback
+  // has begun before releasing it. That puts the four game actions on the four
+  // beats of the opening measure.
+  startMusic().finally(() => control("start"));
 }
 
 // --------------------------------------------------------------------- music
@@ -109,19 +111,18 @@ function paintMute() {
 }
 
 function startMusic() {
-  if (!musicAvailable) return;
+  if (!musicAvailable) return Promise.resolve();
   theme.volume = 0.32;
   theme.muted = readMuted();
   paintMute();
-  theme.play().then(
-    () => {
+  return theme.play()
+    .then(() => {
       $("mute").hidden = false;
-    },
-    () => {
+    })
+    .catch(() => {
       // Refused despite the gesture, or there is nothing to play.
       $("mute").hidden = true;
-    },
-  );
+    });
 }
 
 $("mute").addEventListener("click", () => {
@@ -198,6 +199,10 @@ function sessionLost() {
 
 $("pause").addEventListener("click", () => {
   const running = state.status?.running ?? true;
+  if (musicAvailable) {
+    if (running) theme.pause();
+    else theme.play().catch(() => { /* the game still works without audio */ });
+  }
   control(running ? "pause" : "resume");
 });
 $("step").addEventListener("click", () => control("step"));
@@ -439,7 +444,9 @@ function logLine(event) {
 
 let pulseTimer = null;
 function pulse(seq) {
-  $("seqNum").textContent = seq;
+  // Sequence IDs are zero-based for the protocol; the diagram is counting
+  // admitted events, so its human-facing value starts at one.
+  $("seqNum").textContent = seq + 1;
   const box = $("sequencer");
   box.classList.add("tick");
   clearTimeout(pulseTimer);

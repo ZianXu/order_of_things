@@ -189,8 +189,8 @@ body.playing .welcome { display: none; }
 .decision-pop.defect { color: var(--bad); }
 
 @keyframes decision-float {
-  from { opacity: 0; transform: translate(-50%, -40%); }
-  18% { opacity: 1; }
+  from { opacity: 1; transform: translate(-50%, -40%); }
+  65% { opacity: 1; }
   to { opacity: 0; transform: translate(-50%, -150%); }
 }
 

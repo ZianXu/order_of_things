@@ -35,6 +35,25 @@ func TestPacerThrottles(t *testing.T) {
 	}
 }
 
+func TestPacerUsesAnAbsoluteBeatGrid(t *testing.T) {
+	pacer := NewPacer(200 * time.Millisecond)
+	ctx := context.Background()
+	if !pacer.Wait(ctx) {
+		t.Fatal("first beat was cancelled")
+	}
+	first := time.Now()
+
+	// This is the time the sequencer spends delivering the first event. The next
+	// beat must remain scheduled from the first beat, rather than from this work.
+	time.Sleep(100 * time.Millisecond)
+	if !pacer.Wait(ctx) {
+		t.Fatal("second beat was cancelled")
+	}
+	if elapsed := time.Since(first); elapsed >= 260*time.Millisecond {
+		t.Errorf("second beat arrived after %v; want an absolute 200ms beat grid", elapsed)
+	}
+}
+
 func TestPacerPauseBlocksUntilResume(t *testing.T) {
 	pacer := NewPacer(0)
 	ctx := context.Background()
@@ -56,6 +75,58 @@ func TestPacerPauseBlocksUntilResume(t *testing.T) {
 			t.Error("Wait returned false after Resume")
 		}
 	case <-time.After(2 * time.Second):
+		t.Fatal("Wait did not return after Resume")
+	}
+}
+
+func TestPacerBeginReleasesTheFirstBeatImmediately(t *testing.T) {
+	pacer := NewPacer(time.Hour)
+	pacer.Pause()
+	admitted := make(chan bool, 1)
+	go func() { admitted <- pacer.Wait(context.Background()) }()
+
+	pacer.Begin()
+	select {
+	case ok := <-admitted:
+		if !ok {
+			t.Error("Wait returned false after Begin")
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("Begin did not release the first beat immediately")
+	}
+
+	if running, interval := pacer.State(); !running || interval != time.Hour {
+		t.Errorf("after Begin: running=%v interval=%v, want running at 1h", running, interval)
+	}
+}
+
+func TestPacerResumeKeepsTheRemainderOfTheBeat(t *testing.T) {
+	pacer := NewPacer(300 * time.Millisecond)
+	ctx := context.Background()
+	admitted := make(chan bool, 1)
+	go func() { admitted <- pacer.Wait(ctx) }()
+
+	// Let part of the beat pass, then freeze it. The admission must not slip
+	// through while paused, and it must not restart a full beat on resume.
+	time.Sleep(100 * time.Millisecond)
+	pacer.Pause()
+	select {
+	case <-admitted:
+		t.Fatal("Wait returned after pause")
+	case <-time.After(250 * time.Millisecond):
+	}
+
+	resumed := time.Now()
+	pacer.Resume()
+	select {
+	case ok := <-admitted:
+		if !ok {
+			t.Error("Wait returned false after Resume")
+		}
+		if elapsed := time.Since(resumed); elapsed >= 260*time.Millisecond {
+			t.Errorf("resume waited %v, want the remaining beat rather than a fresh 300ms beat", elapsed)
+		}
+	case <-time.After(500 * time.Millisecond):
 		t.Fatal("Wait did not return after Resume")
 	}
 }

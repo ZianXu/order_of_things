@@ -31,6 +31,14 @@ type Pacer struct {
 	// waiter cannot observe a flag that is set and cleared under one lock hold.
 	credits int
 	resumed chan struct{}
+	// nextBeat is an absolute schedule, not a delay measured after the previous
+	// fanout. Advancing it by one interval per admission prevents delivery work
+	// from accumulating into musical drift.
+	nextBeat       time.Time
+	remaining      time.Duration
+	frozenBeat     bool
+	waiting        bool
+	waitGeneration uint64
 }
 
 // NewPacer returns a pacer admitting one event every interval. An interval of 0
@@ -50,9 +58,9 @@ func (p *Pacer) Wait(ctx context.Context) bool {
 			return ctx.Err() == nil
 		}
 		running, interval, resumed := p.running, p.interval, p.resumed
-		p.mu.Unlock()
 
 		if !running {
+			p.mu.Unlock()
 			// Paused: wait to be resumed, then re-read the interval, which may
 			// have been changed while stopped.
 			select {
@@ -63,16 +71,37 @@ func (p *Pacer) Wait(ctx context.Context) bool {
 			}
 		}
 		if interval <= 0 {
+			p.mu.Unlock()
 			return ctx.Err() == nil
 		}
 
-		timer := time.NewTimer(interval)
+		if p.nextBeat.IsZero() {
+			p.nextBeat = time.Now().Add(interval)
+		}
+		delay := time.Until(p.nextBeat)
+		if delay < 0 {
+			delay = 0
+		}
+		generation := p.waitGeneration
+		p.waiting = true
+		p.mu.Unlock()
+
+		timer := time.NewTimer(delay)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
 			return false
 		case <-timer.C:
-			return true
+			p.mu.Lock()
+			admit := p.running && p.waiting && p.waitGeneration == generation
+			if admit {
+				p.waiting = false
+				p.nextBeat = p.nextBeat.Add(interval)
+			}
+			p.mu.Unlock()
+			if admit {
+				return true
+			}
 		case <-resumed:
 			// The speed changed mid-wait; start again at the new rate.
 			timer.Stop()
@@ -85,6 +114,8 @@ func (p *Pacer) Pause() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.running = false
+	p.holdBeatLocked()
+	p.wakeLocked()
 }
 
 // Resume releases admission.
@@ -94,7 +125,28 @@ func (p *Pacer) Resume() {
 	if p.running {
 		return
 	}
+	if p.frozenBeat {
+		p.nextBeat = time.Now().Add(p.remaining)
+		p.frozenBeat = false
+	}
 	p.running = true
+	p.wakeLocked()
+}
+
+// Begin releases the first event immediately, then continues at the configured
+// beat interval. It is for a newly created paused stream: its first visible
+// action should land on the soundtrack's first beat, not one beat later.
+func (p *Pacer) Begin() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.running {
+		return
+	}
+	p.credits++
+	p.running = true
+	p.remaining = 0
+	p.frozenBeat = false
+	p.nextBeat = time.Now().Add(p.interval)
 	p.wakeLocked()
 }
 
@@ -104,6 +156,11 @@ func (p *Pacer) SetInterval(interval time.Duration) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.interval = interval
+	// A changed tempo starts a fresh beat immediately.
+	p.remaining = 0
+	p.frozenBeat = false
+	p.nextBeat = time.Time{}
+	p.waiting = false
 	p.wakeLocked()
 }
 
@@ -114,6 +171,7 @@ func (p *Pacer) Step() {
 	defer p.mu.Unlock()
 	p.credits++
 	p.running = false
+	p.holdBeatLocked()
 	p.wakeLocked()
 }
 
@@ -128,6 +186,19 @@ func (p *Pacer) State() (running bool, interval time.Duration) {
 // new one. Closing a channel rather than signalling means a waiter cannot miss
 // the wake-up between releasing the lock and selecting on it.
 func (p *Pacer) wakeLocked() {
+	p.waitGeneration++
 	close(p.resumed)
 	p.resumed = make(chan struct{})
+}
+
+func (p *Pacer) holdBeatLocked() {
+	if p.nextBeat.IsZero() {
+		return
+	}
+	p.remaining = time.Until(p.nextBeat)
+	if p.remaining < 0 {
+		p.remaining = 0
+	}
+	p.frozenBeat = true
+	p.waiting = false
 }

@@ -54,9 +54,18 @@ const CanonicalSeed = 20260906
 // watch it recover, short enough to hold a viewer.
 const DefaultGames = 25
 
-// DefaultInterval is the starting pace: one event per second, slow enough to
-// follow by eye.
-const DefaultInterval = time.Second
+// DefaultTempo is the soundtrack's beats per minute. The session converts it to
+// an admission interval, so swapping the music needs one tempo change rather
+// than a hand-calculated duration.
+const DefaultTempo = 93.0
+
+// IntervalForTempo returns the duration of one beat at tempo BPM.
+func IntervalForTempo(tempo float64) time.Duration {
+	return time.Duration(float64(time.Minute) / tempo)
+}
+
+// DefaultInterval is one beat of the default soundtrack.
+const DefaultInterval = time.Minute / time.Duration(DefaultTempo)
 
 // Registry owns the live sessions a server is running. Sessions are fully
 // independent -- each has its own sequencer, components and state -- so the only
@@ -141,6 +150,11 @@ func (r *Registry) SetInterval(interval time.Duration) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.interval = interval
+}
+
+// SetTempo overrides the starting pace of new sessions in beats per minute.
+func (r *Registry) SetTempo(tempo float64) {
+	r.SetInterval(IntervalForTempo(tempo))
 }
 
 // Handle is a live session and its identity.
