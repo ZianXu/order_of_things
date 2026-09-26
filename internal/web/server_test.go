@@ -228,7 +228,7 @@ func TestStreamDeliversTheFeedInOrder(t *testing.T) {
 	})
 
 	events := feedEvents(frames)
-	// Six games: a new-game, two decisions and a derived completion each.
+	// Six games: a new-game, two decisions, and a separately paced completion each.
 	if want := 6 * 4; len(events) != want {
 		t.Fatalf("feed had %d events, want %d", len(events), want)
 	}

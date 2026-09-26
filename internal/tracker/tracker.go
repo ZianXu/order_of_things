@@ -24,8 +24,8 @@ const (
 // folds these in order, the same way every component folds the sequenced stream,
 // which makes the browser one more replica rather than a dashboard.
 //
-// Two of the three kinds are sequenced log events. "game-completed" is derived,
-// emitted when the second decision of a game lands. Deriving it here rather than
+// All feed kinds are sequenced log events. "game-completed" is emitted when a
+// game resolution lands. Deriving it here rather than
 // in the browser is deliberate: the tracker already is a replica of the state
 // machine, so letting it say what a game came to avoids a second, drifting copy
 // of the payoff rules in JavaScript.
@@ -178,7 +178,7 @@ func (t *Tracker) HandleEvent(e *platform.Event) any {
 	return nil
 }
 
-// record turns one admitted event into the one or two feed events the UI folds.
+// record turns each admitted display event into one feed event for the UI.
 func (t *Tracker) record(e *platform.Event, completed *fsm.Game) {
 	base := FeedEvent{
 		Index:     len(t.feed),

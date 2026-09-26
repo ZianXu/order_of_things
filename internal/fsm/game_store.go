@@ -167,16 +167,25 @@ func (g *GameStore) ApplyEvent(seq int64, payload any) *Game {
 		case v.Strategy == g.currentGame.StrategyB && g.currentGame.DecisionB == nil:
 			g.currentGame.DecisionB = &decision
 		}
-		if g.currentGame.DecisionA != nil && g.currentGame.DecisionB != nil {
-			completed := g.currentGame
-			g.currentGame = nil
-			calculatePayoff(completed)
-			g.corrupt(completed)
-			g.leaderboard[completed.StrategyA] += completed.PayoffA
-			g.leaderboard[completed.StrategyB] += completed.PayoffB
-			g.completedGames = append(g.completedGames, completed)
-			return completed
+
+	case GameResolved:
+		if g.currentGame == nil {
+			panic("game resolved before game is created")
 		}
+		if v.Id != g.currentGame.Id {
+			panic("wrong game resolved")
+		}
+		if g.currentGame.DecisionA == nil || g.currentGame.DecisionB == nil {
+			panic("game resolved before both decisions")
+		}
+		completed := g.currentGame
+		g.currentGame = nil
+		calculatePayoff(completed)
+		g.corrupt(completed)
+		g.leaderboard[completed.StrategyA] += completed.PayoffA
+		g.leaderboard[completed.StrategyB] += completed.PayoffB
+		g.completedGames = append(g.completedGames, completed)
+		return completed
 	}
 	return nil
 }

@@ -2,7 +2,7 @@
   {
     "seed": 20260906,
     "games": 25,
-    "stateHash": 1946484924220039626,
+    "stateHash": 11230089306593055324,
     "leaderboard": [
       {
         "strategy": "copy-leader",
@@ -24,79 +24,104 @@
     "chain": [
       599711855461914977,
       5412490378487078716,
-      1534567016480285951,
-      8879604504820396945,
-      7770770136442180428,
-      10784146316126960089,
-      2960020553676157220,
-      16021564162151396154,
-      9752642538910544092,
-      18353453872601635402,
-      2615290434948666425,
-      5886556851354909860,
-      16330610052761495987,
-      4033754913647738655,
-      4238117419683563145,
-      4167002081299067352,
-      14434195965529521616,
-      6622051343388488097,
-      11866973915584754310,
-      7085437952452728406,
-      10219245212486516046,
-      13385976613729167263,
-      4150673924097738750,
-      13858917383171527943,
-      10599994953114110854,
-      12546889963890540068,
-      16155602325943172344,
-      15101412924281236413,
-      7240194805754323536,
-      1687562158311311453,
-      4056254816794115723,
-      8176753392848425482,
-      1314039734519101526,
-      3135974533690879059,
-      12689166241177749786,
-      3383393061590982217,
-      5537784035508721825,
-      9443070917012457918,
-      3651209519990344052,
-      2381794025935377829,
-      6652128027587691084,
-      10331093297726352945,
-      6788240082902497105,
-      10480652652296455048,
-      6078156184327711792,
-      14221749845138116623,
-      10344203369912321236,
-      3048887331301370815,
-      18114007024256151243,
-      12012069856523516369,
-      16996299619458497317,
-      10293406873562587805,
-      7491653432166539507,
-      1592363047155203142,
-      13226791002891422592,
-      378261249832066616,
-      16519256016532844040,
-      12868469021904758496,
-      14768318831033424271,
-      17941275653335363830,
-      3606623989791151783,
-      17453996972438552700,
-      1998180291958019448,
-      17701786891569185321,
-      13883090985371795717,
-      12279470520181754488,
-      7111940292146367321,
-      12476377893842530394,
-      11366066489848495742,
-      11504026972707606273,
-      14027684354506762435,
-      4220744441685714144,
-      16826524092887051381,
-      12405944729342973606,
-      1946484924220039626
+      14229991662521126572,
+      7613058304199881752,
+      6519406660449356900,
+      11900234175697912837,
+      17408397541337024505,
+      15156292839857647304,
+      11342363344861156273,
+      3371010843690741455,
+      1199933858829632731,
+      3396791411162871334,
+      9891855871585193172,
+      17041541409870872181,
+      75351280121552309,
+      3063739201588281820,
+      616023966272957563,
+      14886396501071955063,
+      8303007328468434982,
+      683596608996179861,
+      14088527486196611892,
+      8182533047970394614,
+      11049427977031808683,
+      7469265235351344696,
+      8844073808290583881,
+      5905553408007045643,
+      2164128529472794398,
+      6824171932566365453,
+      13479682333023774476,
+      9051081162192753571,
+      3338242811798308885,
+      17490549747908018256,
+      14401459776026645407,
+      171827279088457255,
+      8521189636399763620,
+      7665492366092277905,
+      17371821088254128852,
+      1949263791707082403,
+      9986524350001427349,
+      1336449718626134938,
+      18039937572709704120,
+      11746446899337898133,
+      3889194915899656589,
+      5066779249656675498,
+      8036144364631401943,
+      2958976911687023436,
+      11238956942069729158,
+      13854850625818840889,
+      6918085341135386961,
+      2981185245612874030,
+      15247353373526135597,
+      5461425042368246550,
+      17049679345340034039,
+      12701529655748751640,
+      5651088960453708682,
+      18060559700807737993,
+      11536340027231785945,
+      9356833245964715904,
+      9127618858574418889,
+      5166201063278033170,
+      15227242025896500981,
+      17198777759597527308,
+      11506540887217452176,
+      13325117010103242091,
+      9105728610065757367,
+      2581087105122693165,
+      15262700430869067274,
+      12693798700674288643,
+      2165374016531532915,
+      5170488332152530139,
+      17332038941849366560,
+      9754840030208603983,
+      17376811214290107873,
+      10807813222975865633,
+      8138580433206589252,
+      8622068150959619095,
+      16874361759927862697,
+      4745000868035631594,
+      12297650575260006465,
+      5314377265265901484,
+      13501281437265641093,
+      13406113430156585046,
+      5059706760903081421,
+      15030660660631364572,
+      2402905695718318637,
+      12318492847833860143,
+      15091574888483064523,
+      593445715181906528,
+      8690658203761868273,
+      12334038259777934402,
+      6915178569463161713,
+      580315161256676858,
+      17448365629246397661,
+      4029308194461402753,
+      16515461135777528496,
+      12434138469335577807,
+      4749454177115129208,
+      10092241982853158245,
+      6655987973089294521,
+      11230089306593055324
     ],
     "log": [
       {
@@ -127,6 +152,13 @@
       {
         "seq": 3,
         "component": "game-injector",
+        "resolved": {
+          "Id": 0
+        }
+      },
+      {
+        "seq": 4,
+        "component": "game-injector",
         "newGame": {
           "Id": 1,
           "StrategyA": "flipper",
@@ -134,7 +166,7 @@
         }
       },
       {
-        "seq": 4,
+        "seq": 5,
         "component": "flipper",
         "decision": {
           "Strategy": "flipper",
@@ -142,7 +174,7 @@
         }
       },
       {
-        "seq": 5,
+        "seq": 6,
         "component": "copy-leader",
         "decision": {
           "Strategy": "copy-leader",
@@ -150,7 +182,14 @@
         }
       },
       {
-        "seq": 6,
+        "seq": 7,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 1
+        }
+      },
+      {
+        "seq": 8,
         "component": "game-injector",
         "newGame": {
           "Id": 2,
@@ -159,7 +198,7 @@
         }
       },
       {
-        "seq": 7,
+        "seq": 9,
         "component": "cooperator",
         "decision": {
           "Strategy": "cooperator",
@@ -167,7 +206,7 @@
         }
       },
       {
-        "seq": 8,
+        "seq": 10,
         "component": "flipper",
         "decision": {
           "Strategy": "flipper",
@@ -175,7 +214,14 @@
         }
       },
       {
-        "seq": 9,
+        "seq": 11,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 2
+        }
+      },
+      {
+        "seq": 12,
         "component": "game-injector",
         "newGame": {
           "Id": 3,
@@ -184,7 +230,7 @@
         }
       },
       {
-        "seq": 10,
+        "seq": 13,
         "component": "cooperator",
         "decision": {
           "Strategy": "cooperator",
@@ -192,7 +238,7 @@
         }
       },
       {
-        "seq": 11,
+        "seq": 14,
         "component": "flipper",
         "decision": {
           "Strategy": "flipper",
@@ -200,7 +246,14 @@
         }
       },
       {
-        "seq": 12,
+        "seq": 15,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 3
+        }
+      },
+      {
+        "seq": 16,
         "component": "game-injector",
         "newGame": {
           "Id": 4,
@@ -209,7 +262,7 @@
         }
       },
       {
-        "seq": 13,
+        "seq": 17,
         "component": "copy-leader",
         "decision": {
           "Strategy": "copy-leader",
@@ -217,7 +270,7 @@
         }
       },
       {
-        "seq": 14,
+        "seq": 18,
         "component": "retaliator",
         "decision": {
           "Strategy": "retaliator",
@@ -225,7 +278,14 @@
         }
       },
       {
-        "seq": 15,
+        "seq": 19,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 4
+        }
+      },
+      {
+        "seq": 20,
         "component": "game-injector",
         "newGame": {
           "Id": 5,
@@ -234,7 +294,7 @@
         }
       },
       {
-        "seq": 16,
+        "seq": 21,
         "component": "copy-leader",
         "decision": {
           "Strategy": "copy-leader",
@@ -242,7 +302,7 @@
         }
       },
       {
-        "seq": 17,
+        "seq": 22,
         "component": "cooperator",
         "decision": {
           "Strategy": "cooperator",
@@ -250,7 +310,14 @@
         }
       },
       {
-        "seq": 18,
+        "seq": 23,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 5
+        }
+      },
+      {
+        "seq": 24,
         "component": "game-injector",
         "newGame": {
           "Id": 6,
@@ -259,7 +326,7 @@
         }
       },
       {
-        "seq": 19,
+        "seq": 25,
         "component": "copy-leader",
         "decision": {
           "Strategy": "copy-leader",
@@ -267,7 +334,7 @@
         }
       },
       {
-        "seq": 20,
+        "seq": 26,
         "component": "retaliator",
         "decision": {
           "Strategy": "retaliator",
@@ -275,7 +342,14 @@
         }
       },
       {
-        "seq": 21,
+        "seq": 27,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 6
+        }
+      },
+      {
+        "seq": 28,
         "component": "game-injector",
         "newGame": {
           "Id": 7,
@@ -284,7 +358,7 @@
         }
       },
       {
-        "seq": 22,
+        "seq": 29,
         "component": "flipper",
         "decision": {
           "Strategy": "flipper",
@@ -292,7 +366,7 @@
         }
       },
       {
-        "seq": 23,
+        "seq": 30,
         "component": "copy-leader",
         "decision": {
           "Strategy": "copy-leader",
@@ -300,7 +374,14 @@
         }
       },
       {
-        "seq": 24,
+        "seq": 31,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 7
+        }
+      },
+      {
+        "seq": 32,
         "component": "game-injector",
         "newGame": {
           "Id": 8,
@@ -309,101 +390,33 @@
         }
       },
       {
-        "seq": 25,
-        "component": "flipper",
-        "decision": {
-          "Strategy": "flipper",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 26,
-        "component": "cooperator",
-        "decision": {
-          "Strategy": "cooperator",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 27,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 9,
-          "StrategyA": "flipper",
-          "StrategyB": "copy-leader"
-        }
-      },
-      {
-        "seq": 28,
-        "component": "flipper",
-        "decision": {
-          "Strategy": "flipper",
-          "Decision": 2
-        }
-      },
-      {
-        "seq": 29,
-        "component": "copy-leader",
-        "decision": {
-          "Strategy": "copy-leader",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 30,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 10,
-          "StrategyA": "retaliator",
-          "StrategyB": "cooperator"
-        }
-      },
-      {
-        "seq": 31,
-        "component": "retaliator",
-        "decision": {
-          "Strategy": "retaliator",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 32,
-        "component": "cooperator",
-        "decision": {
-          "Strategy": "cooperator",
-          "Decision": 1
-        }
-      },
-      {
         "seq": 33,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 11,
-          "StrategyA": "copy-leader",
-          "StrategyB": "cooperator"
+        "component": "flipper",
+        "decision": {
+          "Strategy": "flipper",
+          "Decision": 1
         }
       },
       {
         "seq": 34,
-        "component": "copy-leader",
-        "decision": {
-          "Strategy": "copy-leader",
-          "Decision": 2
-        }
-      },
-      {
-        "seq": 35,
         "component": "cooperator",
         "decision": {
           "Strategy": "cooperator",
           "Decision": 1
+        }
+      },
+      {
+        "seq": 35,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 8
         }
       },
       {
         "seq": 36,
         "component": "game-injector",
         "newGame": {
-          "Id": 12,
+          "Id": 9,
           "StrategyA": "flipper",
           "StrategyB": "copy-leader"
         }
@@ -413,7 +426,7 @@
         "component": "flipper",
         "decision": {
           "Strategy": "flipper",
-          "Decision": 1
+          "Decision": 2
         }
       },
       {
@@ -421,24 +434,23 @@
         "component": "copy-leader",
         "decision": {
           "Strategy": "copy-leader",
-          "Decision": 2
+          "Decision": 1
         }
       },
       {
         "seq": 39,
         "component": "game-injector",
-        "newGame": {
-          "Id": 13,
-          "StrategyA": "flipper",
-          "StrategyB": "retaliator"
+        "resolved": {
+          "Id": 9
         }
       },
       {
         "seq": 40,
-        "component": "flipper",
-        "decision": {
-          "Strategy": "flipper",
-          "Decision": 2
+        "component": "game-injector",
+        "newGame": {
+          "Id": 10,
+          "StrategyA": "retaliator",
+          "StrategyB": "cooperator"
         }
       },
       {
@@ -451,6 +463,117 @@
       },
       {
         "seq": 42,
+        "component": "cooperator",
+        "decision": {
+          "Strategy": "cooperator",
+          "Decision": 1
+        }
+      },
+      {
+        "seq": 43,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 10
+        }
+      },
+      {
+        "seq": 44,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 11,
+          "StrategyA": "copy-leader",
+          "StrategyB": "cooperator"
+        }
+      },
+      {
+        "seq": 45,
+        "component": "copy-leader",
+        "decision": {
+          "Strategy": "copy-leader",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 46,
+        "component": "cooperator",
+        "decision": {
+          "Strategy": "cooperator",
+          "Decision": 1
+        }
+      },
+      {
+        "seq": 47,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 11
+        }
+      },
+      {
+        "seq": 48,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 12,
+          "StrategyA": "flipper",
+          "StrategyB": "copy-leader"
+        }
+      },
+      {
+        "seq": 49,
+        "component": "flipper",
+        "decision": {
+          "Strategy": "flipper",
+          "Decision": 1
+        }
+      },
+      {
+        "seq": 50,
+        "component": "copy-leader",
+        "decision": {
+          "Strategy": "copy-leader",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 51,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 12
+        }
+      },
+      {
+        "seq": 52,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 13,
+          "StrategyA": "flipper",
+          "StrategyB": "retaliator"
+        }
+      },
+      {
+        "seq": 53,
+        "component": "flipper",
+        "decision": {
+          "Strategy": "flipper",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 54,
+        "component": "retaliator",
+        "decision": {
+          "Strategy": "retaliator",
+          "Decision": 1
+        }
+      },
+      {
+        "seq": 55,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 13
+        }
+      },
+      {
+        "seq": 56,
         "component": "game-injector",
         "newGame": {
           "Id": 14,
@@ -459,7 +582,7 @@
         }
       },
       {
-        "seq": 43,
+        "seq": 57,
         "component": "flipper",
         "decision": {
           "Strategy": "flipper",
@@ -467,7 +590,7 @@
         }
       },
       {
-        "seq": 44,
+        "seq": 58,
         "component": "retaliator",
         "decision": {
           "Strategy": "retaliator",
@@ -475,7 +598,14 @@
         }
       },
       {
-        "seq": 45,
+        "seq": 59,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 14
+        }
+      },
+      {
+        "seq": 60,
         "component": "game-injector",
         "newGame": {
           "Id": 15,
@@ -484,135 +614,10 @@
         }
       },
       {
-        "seq": 46,
-        "component": "flipper",
-        "decision": {
-          "Strategy": "flipper",
-          "Decision": 2
-        }
-      },
-      {
-        "seq": 47,
-        "component": "retaliator",
-        "decision": {
-          "Strategy": "retaliator",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 48,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 16,
-          "StrategyA": "copy-leader",
-          "StrategyB": "flipper"
-        }
-      },
-      {
-        "seq": 49,
-        "component": "copy-leader",
-        "decision": {
-          "Strategy": "copy-leader",
-          "Decision": 2
-        }
-      },
-      {
-        "seq": 50,
-        "component": "flipper",
-        "decision": {
-          "Strategy": "flipper",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 51,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 17,
-          "StrategyA": "flipper",
-          "StrategyB": "cooperator"
-        }
-      },
-      {
-        "seq": 52,
-        "component": "flipper",
-        "decision": {
-          "Strategy": "flipper",
-          "Decision": 2
-        }
-      },
-      {
-        "seq": 53,
-        "component": "cooperator",
-        "decision": {
-          "Strategy": "cooperator",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 54,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 18,
-          "StrategyA": "copy-leader",
-          "StrategyB": "flipper"
-        }
-      },
-      {
-        "seq": 55,
-        "component": "copy-leader",
-        "decision": {
-          "Strategy": "copy-leader",
-          "Decision": 2
-        }
-      },
-      {
-        "seq": 56,
-        "component": "flipper",
-        "decision": {
-          "Strategy": "flipper",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 57,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 19,
-          "StrategyA": "retaliator",
-          "StrategyB": "copy-leader"
-        }
-      },
-      {
-        "seq": 58,
-        "component": "retaliator",
-        "decision": {
-          "Strategy": "retaliator",
-          "Decision": 1
-        }
-      },
-      {
-        "seq": 59,
-        "component": "copy-leader",
-        "decision": {
-          "Strategy": "copy-leader",
-          "Decision": 2
-        }
-      },
-      {
-        "seq": 60,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 20,
-          "StrategyA": "copy-leader",
-          "StrategyB": "retaliator"
-        }
-      },
-      {
         "seq": 61,
-        "component": "copy-leader",
+        "component": "flipper",
         "decision": {
-          "Strategy": "copy-leader",
+          "Strategy": "flipper",
           "Decision": 2
         }
       },
@@ -621,24 +626,23 @@
         "component": "retaliator",
         "decision": {
           "Strategy": "retaliator",
-          "Decision": 2
+          "Decision": 1
         }
       },
       {
         "seq": 63,
         "component": "game-injector",
-        "newGame": {
-          "Id": 21,
-          "StrategyA": "cooperator",
-          "StrategyB": "copy-leader"
+        "resolved": {
+          "Id": 15
         }
       },
       {
         "seq": 64,
-        "component": "cooperator",
-        "decision": {
-          "Strategy": "cooperator",
-          "Decision": 1
+        "component": "game-injector",
+        "newGame": {
+          "Id": 16,
+          "StrategyA": "copy-leader",
+          "StrategyB": "flipper"
         }
       },
       {
@@ -651,36 +655,34 @@
       },
       {
         "seq": 66,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 22,
-          "StrategyA": "copy-leader",
-          "StrategyB": "retaliator"
+        "component": "flipper",
+        "decision": {
+          "Strategy": "flipper",
+          "Decision": 1
         }
       },
       {
         "seq": 67,
-        "component": "copy-leader",
-        "decision": {
-          "Strategy": "copy-leader",
-          "Decision": 2
+        "component": "game-injector",
+        "resolved": {
+          "Id": 16
         }
       },
       {
         "seq": 68,
-        "component": "retaliator",
-        "decision": {
-          "Strategy": "retaliator",
-          "Decision": 2
+        "component": "game-injector",
+        "newGame": {
+          "Id": 17,
+          "StrategyA": "flipper",
+          "StrategyB": "cooperator"
         }
       },
       {
         "seq": 69,
-        "component": "game-injector",
-        "newGame": {
-          "Id": 23,
-          "StrategyA": "cooperator",
-          "StrategyB": "retaliator"
+        "component": "flipper",
+        "decision": {
+          "Strategy": "flipper",
+          "Decision": 2
         }
       },
       {
@@ -693,6 +695,54 @@
       },
       {
         "seq": 71,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 17
+        }
+      },
+      {
+        "seq": 72,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 18,
+          "StrategyA": "copy-leader",
+          "StrategyB": "flipper"
+        }
+      },
+      {
+        "seq": 73,
+        "component": "copy-leader",
+        "decision": {
+          "Strategy": "copy-leader",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 74,
+        "component": "flipper",
+        "decision": {
+          "Strategy": "flipper",
+          "Decision": 1
+        }
+      },
+      {
+        "seq": 75,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 18
+        }
+      },
+      {
+        "seq": 76,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 19,
+          "StrategyA": "retaliator",
+          "StrategyB": "copy-leader"
+        }
+      },
+      {
+        "seq": 77,
         "component": "retaliator",
         "decision": {
           "Strategy": "retaliator",
@@ -700,7 +750,150 @@
         }
       },
       {
-        "seq": 72,
+        "seq": 78,
+        "component": "copy-leader",
+        "decision": {
+          "Strategy": "copy-leader",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 79,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 19
+        }
+      },
+      {
+        "seq": 80,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 20,
+          "StrategyA": "copy-leader",
+          "StrategyB": "retaliator"
+        }
+      },
+      {
+        "seq": 81,
+        "component": "copy-leader",
+        "decision": {
+          "Strategy": "copy-leader",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 82,
+        "component": "retaliator",
+        "decision": {
+          "Strategy": "retaliator",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 83,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 20
+        }
+      },
+      {
+        "seq": 84,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 21,
+          "StrategyA": "cooperator",
+          "StrategyB": "copy-leader"
+        }
+      },
+      {
+        "seq": 85,
+        "component": "cooperator",
+        "decision": {
+          "Strategy": "cooperator",
+          "Decision": 1
+        }
+      },
+      {
+        "seq": 86,
+        "component": "copy-leader",
+        "decision": {
+          "Strategy": "copy-leader",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 87,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 21
+        }
+      },
+      {
+        "seq": 88,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 22,
+          "StrategyA": "copy-leader",
+          "StrategyB": "retaliator"
+        }
+      },
+      {
+        "seq": 89,
+        "component": "copy-leader",
+        "decision": {
+          "Strategy": "copy-leader",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 90,
+        "component": "retaliator",
+        "decision": {
+          "Strategy": "retaliator",
+          "Decision": 2
+        }
+      },
+      {
+        "seq": 91,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 22
+        }
+      },
+      {
+        "seq": 92,
+        "component": "game-injector",
+        "newGame": {
+          "Id": 23,
+          "StrategyA": "cooperator",
+          "StrategyB": "retaliator"
+        }
+      },
+      {
+        "seq": 93,
+        "component": "cooperator",
+        "decision": {
+          "Strategy": "cooperator",
+          "Decision": 1
+        }
+      },
+      {
+        "seq": 94,
+        "component": "retaliator",
+        "decision": {
+          "Strategy": "retaliator",
+          "Decision": 1
+        }
+      },
+      {
+        "seq": 95,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 23
+        }
+      },
+      {
+        "seq": 96,
         "component": "game-injector",
         "newGame": {
           "Id": 24,
@@ -709,7 +902,7 @@
         }
       },
       {
-        "seq": 73,
+        "seq": 97,
         "component": "flipper",
         "decision": {
           "Strategy": "flipper",
@@ -717,11 +910,18 @@
         }
       },
       {
-        "seq": 74,
+        "seq": 98,
         "component": "cooperator",
         "decision": {
           "Strategy": "cooperator",
           "Decision": 1
+        }
+      },
+      {
+        "seq": 99,
+        "component": "game-injector",
+        "resolved": {
+          "Id": 24
         }
       }
     ]

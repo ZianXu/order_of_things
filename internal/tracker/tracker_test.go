@@ -19,7 +19,8 @@ func playGame(tr *Tracker, seq int64, a, b fsm.Strategy, da, db fsm.Decision) in
 	tr.HandleEvent(sequenced(seq, fsm.NewGame{Id: seq, StrategyA: a, StrategyB: b}))
 	tr.HandleEvent(sequenced(seq+1, fsm.GameDecision{Strategy: a, Decision: da}))
 	tr.HandleEvent(sequenced(seq+2, fsm.GameDecision{Strategy: b, Decision: db}))
-	return seq + 3
+	tr.HandleEvent(sequenced(seq+3, fsm.GameResolved{Id: seq}))
+	return seq + 4
 }
 
 // The tracker is a read model: it folds the stream like everyone else but must
@@ -31,6 +32,7 @@ func TestTrackerNeverEmits(t *testing.T) {
 		sequenced(0, fsm.NewGame{Id: 0, StrategyA: fsm.Flipper, StrategyB: fsm.Cooperator}),
 		sequenced(1, fsm.GameDecision{Strategy: fsm.Flipper, Decision: fsm.Defect}),
 		sequenced(2, fsm.GameDecision{Strategy: fsm.Cooperator, Decision: fsm.Cooperate}),
+		sequenced(3, fsm.GameResolved{Id: 0}),
 	}
 	for i, e := range events {
 		if out := tr.HandleEvent(e); out != nil {
@@ -90,8 +92,8 @@ func TestRecentGamesAreBounded(t *testing.T) {
 	if len(snapshot.Recent) != recentGames {
 		t.Errorf("Recent has %d games, want %d", len(snapshot.Recent), recentGames)
 	}
-	if last := snapshot.Recent[len(snapshot.Recent)-1]; last.Id != seq-3 {
-		t.Errorf("last recent game id = %d, want %d", last.Id, seq-3)
+	if last := snapshot.Recent[len(snapshot.Recent)-1]; last.Id != seq-4 {
+		t.Errorf("last recent game id = %d, want %d", last.Id, seq-4)
 	}
 }
 
@@ -155,9 +157,8 @@ func TestFeedRecordsWhoWonEachPosition(t *testing.T) {
 	}
 }
 
-// A game completing is not an event on the wire -- it is derived when the second
-// decision lands. The tracker emits it so the browser does not need its own copy
-// of the payoff rules.
+// A game completion is derived from its resolution event, so the browser does
+// not need its own copy of the payoff rules.
 func TestFeedDerivesGameCompletion(t *testing.T) {
 	tr := newTracker(0)
 	playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
@@ -182,10 +183,8 @@ func TestFeedDerivesGameCompletion(t *testing.T) {
 	if len(completion.Leaderboard) != 2 || completion.Leaderboard[0].Strategy != fsm.Flipper {
 		t.Errorf("completion leaderboard = %v, want flipper leading", completion.Leaderboard)
 	}
-	// The completion shares a sequence number with the decision that caused it:
-	// one admitted event, two things for the UI to do.
-	if completion.Seq != feed[2].Seq {
-		t.Errorf("completion seq = %d, decision seq = %d", completion.Seq, feed[2].Seq)
+	if completion.Seq == feed[2].Seq {
+		t.Errorf("completion seq = %d, should follow the second decision", completion.Seq)
 	}
 }
 
@@ -224,7 +223,7 @@ func TestSnapshotCollectionsAreCopies(t *testing.T) {
 	if len(early.Feed) != 4 {
 		t.Errorf("an earlier snapshot's feed grew to %d events", len(early.Feed))
 	}
-	if early.Wins["test/r0"] != 3 {
+	if early.Wins["test/r0"] != 4 {
 		t.Errorf("an earlier snapshot's wins changed to %v", early.Wins)
 	}
 	if tr.Snapshot().Version <= early.Version {

@@ -17,7 +17,8 @@ func resolve(store *fsm.GameStore, seq int64, da, db fsm.Decision) int64 {
 	game := store.CurrentGame()
 	store.ApplyEvent(seq+1, fsm.GameDecision{Strategy: game.StrategyA, Decision: da})
 	store.ApplyEvent(seq+2, fsm.GameDecision{Strategy: game.StrategyB, Decision: db})
-	return seq + 3
+	store.ApplyEvent(seq+3, fsm.GameResolved{Id: game.Id})
+	return seq + 4
 }
 
 // play admits and settles a game in one step.

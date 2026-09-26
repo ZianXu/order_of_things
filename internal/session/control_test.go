@@ -108,6 +108,42 @@ func TestStepAdmitsOneEventAtATime(t *testing.T) {
 	}
 }
 
+func TestRoundTakesFourVisibleSteps(t *testing.T) {
+	s, _ := started(t, session.Config{Seed: 42, Games: 1, StartPaused: true})
+
+	step := func(seq int64) {
+		s.Step()
+		waitFor(t, "a stepped event", func() bool {
+			return s.Tracker().Snapshot().Seq >= seq
+		})
+	}
+
+	step(0) // game admitted: both players light up
+	game := s.Tracker().Snapshot().CurrentGame
+	if game == nil || game.DecisionA != nil || game.DecisionB != nil {
+		t.Fatalf("after game admission, current game = %+v; want two undecided players", game)
+	}
+
+	step(1) // player A decides
+	game = s.Tracker().Snapshot().CurrentGame
+	if game == nil || game.DecisionA == nil || game.DecisionB != nil {
+		t.Fatalf("after first decision, current game = %+v; want only player A decided", game)
+	}
+
+	step(2) // player B decides, but scoring waits for resolution
+	snapshot := s.Tracker().Snapshot()
+	game = snapshot.CurrentGame
+	if game == nil || game.DecisionA == nil || game.DecisionB == nil || snapshot.Completed != 0 {
+		t.Fatalf("after second decision, game = %+v completed = %d; want an unresolved decided game", game, snapshot.Completed)
+	}
+
+	step(3) // resolution clears both players and publishes scores
+	snapshot = s.Tracker().Snapshot()
+	if snapshot.CurrentGame != nil || snapshot.Completed != 1 {
+		t.Fatalf("after resolution, game = %+v completed = %d; want no current game and one score", snapshot.CurrentGame, snapshot.Completed)
+	}
+}
+
 func TestSetIntervalTakesEffectImmediately(t *testing.T) {
 	s, _ := started(t, session.Config{Seed: 42, Games: 100, Interval: time.Hour})
 

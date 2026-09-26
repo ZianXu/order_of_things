@@ -13,7 +13,7 @@
 // waiting until it finishes to find out it was wrong at event three defeats the
 // purpose of checking before it rejoins.
 //
-// The chain is small: three events per game, eight bytes each, so a hundred-game
+// The chain is small: four events per game, eight bytes each, so a hundred-game
 // tournament is a couple of kilobytes.
 package golden
 
@@ -35,6 +35,7 @@ type Event struct {
 	Component string            `json:"component"`
 	NewGame   *fsm.NewGame      `json:"newGame,omitempty"`
 	Decision  *fsm.GameDecision `json:"decision,omitempty"`
+	Resolved  *fsm.GameResolved `json:"resolved,omitempty"`
 }
 
 // Payload rebuilds the value the component originally emitted.
@@ -44,6 +45,8 @@ func (e Event) Payload() any {
 		return *e.NewGame
 	case e.Decision != nil:
 		return *e.Decision
+	case e.Resolved != nil:
+		return *e.Resolved
 	default:
 		return nil
 	}
@@ -57,6 +60,8 @@ func NewEvent(seq int64, component string, payload any) Event {
 		event.NewGame = &v
 	case fsm.GameDecision:
 		event.Decision = &v
+	case fsm.GameResolved:
+		event.Resolved = &v
 	}
 	return event
 }

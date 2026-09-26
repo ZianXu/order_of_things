@@ -630,12 +630,21 @@ func (s *Session) Status() []ReplicaStatus {
 // published snapshot, but an admitted emission can still be waiting at the
 // pacer. That emission will settle the apparent wait, so it is not a stall.
 func (s *Session) Stalled() (bool, string) {
+	game := s.tracker.Snapshot().CurrentGame
+	if game == nil {
+		return false, ""
+	}
 	// Only the strategy actually due to move can block the game. Its opponent
 	// being dead does not stall anything yet: the game still has this move left
 	// in it, and will not be waiting on the dead half until its turn comes round.
-	next := s.tracker.Snapshot().CurrentGame.NextToMove()
+	next := game.NextToMove()
 	if next == "" {
-		return false, ""
+		// Both decisions are visible, so the injector is now responsible for
+		// emitting the separate resolution event that applies the scores.
+		if s.componentIsLive(injector.Component) || s.sequencer.HasPendingEmission(injector.Component) {
+			return false, ""
+		}
+		return true, injector.Component
 	}
 	if s.componentIsLive(string(next)) {
 		return false, ""

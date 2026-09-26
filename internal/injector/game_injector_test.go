@@ -122,9 +122,17 @@ func TestInjectorInjectsTheNextGameOnlyOnCompletion(t *testing.T) {
 	out := injector.HandleEvent(sequenced(2, fsm.GameDecision{
 		Strategy: genesis.StrategyB, Decision: fsm.Defect,
 	}))
+	resolution, ok := out.(fsm.GameResolved)
+	if !ok {
+		t.Fatalf("emitted %T after the second decision, want fsm.GameResolved", out)
+	}
+	if resolution.Id != genesis.Id {
+		t.Errorf("resolved game id = %d, want %d", resolution.Id, genesis.Id)
+	}
+	out = injector.HandleEvent(sequenced(3, resolution))
 	next, ok := out.(fsm.NewGame)
 	if !ok {
-		t.Fatalf("emitted %T on completion, want fsm.NewGame", out)
+		t.Fatalf("emitted %T on resolution, want fsm.NewGame", out)
 	}
 	if next.Id != 1 {
 		t.Errorf("next game id = %d, want 1", next.Id)
@@ -143,6 +151,9 @@ func TestInjectorStopsInjectingAtMaxGames(t *testing.T) {
 		injector.HandleEvent(sequenced(seq, fsm.GameDecision{Strategy: game.StrategyA, Decision: fsm.Cooperate}))
 		seq++
 		next = injector.HandleEvent(sequenced(seq, fsm.GameDecision{Strategy: game.StrategyB, Decision: fsm.Cooperate}))
+		seq++
+		resolution := next.(fsm.GameResolved)
+		next = injector.HandleEvent(sequenced(seq, resolution))
 		seq++
 	}
 

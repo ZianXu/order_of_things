@@ -22,6 +22,7 @@ func playGame(store *GameStore, id int64, a, b Strategy, da, db Decision) {
 		NewGame{Id: id, StrategyA: a, StrategyB: b},
 		GameDecision{Strategy: a, Decision: da},
 		GameDecision{Strategy: b, Decision: db},
+		GameResolved{Id: id},
 	)
 }
 
@@ -59,7 +60,7 @@ func TestPayoffMatrix(t *testing.T) {
 	}
 }
 
-func TestGameCompletesOnlyOnceBothDecisionsLand(t *testing.T) {
+func TestGameCompletesOnlyWhenResolvedAfterBothDecisionsLand(t *testing.T) {
 	store := NewGameStore()
 
 	apply(store, NewGame{Id: 0, StrategyA: Cooperator, StrategyB: Flipper})
@@ -75,8 +76,15 @@ func TestGameCompletesOnlyOnceBothDecisionsLand(t *testing.T) {
 	}
 
 	got := apply(store, GameDecision{Strategy: Flipper, Decision: Defect})
+	if len(got) != 0 {
+		t.Fatalf("completed %d games on the second decision, want 0", len(got))
+	}
+	if store.CurrentGame() == nil {
+		t.Error("unresolved game left flight")
+	}
+	got = apply(store, GameResolved{Id: 0})
 	if len(got) != 1 {
-		t.Fatalf("completed %d games on the second decision, want 1", len(got))
+		t.Fatalf("completed %d games on resolution, want 1", len(got))
 	}
 	if store.CurrentGame() != nil {
 		t.Error("completed game is still in flight")
@@ -89,7 +97,7 @@ func TestGameCompletesOnlyOnceBothDecisionsLand(t *testing.T) {
 func TestScoresAccumulateAcrossGames(t *testing.T) {
 	store := NewGameStore()
 	playGame(store, 0, Cooperator, Flipper, Cooperate, Cooperate) // +2 / +2
-	playGame(store, 1, Cooperator, Flipper, Cooperate, Defect)     // -1 / +3
+	playGame(store, 1, Cooperator, Flipper, Cooperate, Defect)    // -1 / +3
 
 	if got, want := store.Score(Cooperator), 1; got != want {
 		t.Errorf("Score(Cooperator) = %d, want %d", got, want)
@@ -193,7 +201,7 @@ func TestNoLeaderBeforeAnyGameCompletes(t *testing.T) {
 func TestLeadingStrategyPicksHighestScore(t *testing.T) {
 	store := NewGameStore()
 	playGame(store, 0, Cooperator, Flipper, Cooperate, Defect) // -1 / +3
-	playGame(store, 1, Retaliator, CopyLeader, Defect, Defect)  // 0 / 0
+	playGame(store, 1, Retaliator, CopyLeader, Defect, Defect) // 0 / 0
 
 	if got := store.LeadingStrategy(); got != Flipper {
 		t.Errorf("LeadingStrategy = %q, want flipper", got)
@@ -266,12 +274,15 @@ func TestReplayReproducesIdenticalState(t *testing.T) {
 		NewGame{Id: 0, StrategyA: Cooperator, StrategyB: Flipper},
 		GameDecision{Strategy: Cooperator, Decision: Cooperate},
 		GameDecision{Strategy: Flipper, Decision: Defect},
+		GameResolved{Id: 0},
 		NewGame{Id: 1, StrategyA: Retaliator, StrategyB: CopyLeader},
 		GameDecision{Strategy: Retaliator, Decision: Defect},
 		GameDecision{Strategy: CopyLeader, Decision: Defect},
+		GameResolved{Id: 1},
 		NewGame{Id: 2, StrategyA: Flipper, StrategyB: Retaliator},
 		GameDecision{Strategy: Flipper, Decision: Cooperate},
 		GameDecision{Strategy: Retaliator, Decision: Cooperate},
+		GameResolved{Id: 2},
 	}
 
 	live := NewGameStore()
@@ -306,6 +317,7 @@ func TestStateHashAdvancesWithTheStream(t *testing.T) {
 			NewGame{Id: int64(i), StrategyA: Cooperator, StrategyB: Flipper},
 			GameDecision{Strategy: Cooperator, Decision: Cooperate},
 			GameDecision{Strategy: Flipper, Decision: Defect},
+			GameResolved{Id: int64(i)},
 		} {
 			store.ApplyEvent(seq, payload)
 			seq++
@@ -323,9 +335,11 @@ func TestIdenticalHistoriesProduceIdenticalStateRoots(t *testing.T) {
 		NewGame{Id: 0, StrategyA: Cooperator, StrategyB: Flipper},
 		GameDecision{Strategy: Cooperator, Decision: Cooperate},
 		GameDecision{Strategy: Flipper, Decision: Defect},
+		GameResolved{Id: 0},
 		NewGame{Id: 1, StrategyA: Retaliator, StrategyB: CopyLeader},
 		GameDecision{Strategy: Retaliator, Decision: Defect},
 		GameDecision{Strategy: CopyLeader, Decision: Defect},
+		GameResolved{Id: 1},
 	}
 	live, replayed := NewGameStore(), NewGameStore()
 	apply(live, history...)
@@ -369,20 +383,21 @@ func playGameAt(store *GameStore, seq int64, a, b Strategy, da, db Decision) int
 	store.ApplyEvent(seq, NewGame{Id: seq, StrategyA: a, StrategyB: b})
 	store.ApplyEvent(seq+1, GameDecision{Strategy: a, Decision: da})
 	store.ApplyEvent(seq+2, GameDecision{Strategy: b, Decision: db})
-	return seq + 3
+	store.ApplyEvent(seq+3, GameResolved{Id: seq})
+	return seq + 4
 }
 
 func TestWatermarkScopedReads(t *testing.T) {
 	store := NewGameStore()
-	playGameAt(store, 0, Flipper, Cooperator, Defect, Cooperate) // seq 0-2: flipper +3
-	playGameAt(store, 3, Retaliator, CopyLeader, Defect, Defect)  // seq 3-5: nobody scores
+	playGameAt(store, 0, Flipper, Cooperator, Defect, Cooperate) // seq 0-3: flipper +3
+	playGameAt(store, 4, Retaliator, CopyLeader, Defect, Defect) // seq 4-7: nobody scores
 
 	t.Run("scopes the leader to a point in the stream", func(t *testing.T) {
 		if got := store.LeaderBefore(0); got != "" {
 			t.Errorf("LeaderBefore(0) = %q, want empty", got)
 		}
-		if got := store.LeaderBefore(3); got != Flipper {
-			t.Errorf("LeaderBefore(3) = %q, want flipper", got)
+		if got := store.LeaderBefore(4); got != Flipper {
+			t.Errorf("LeaderBefore(4) = %q, want flipper", got)
 		}
 		if got := store.LeaderBefore(99); got != Flipper {
 			t.Errorf("LeaderBefore(99) = %q, want flipper", got)
@@ -393,9 +408,9 @@ func TestWatermarkScopedReads(t *testing.T) {
 		if _, ok := store.LastDecisionBefore(Flipper, 0); ok {
 			t.Error("LastDecisionBefore(flipper, 0) found a decision before any game")
 		}
-		got, ok := store.LastDecisionBefore(Flipper, 3)
+		got, ok := store.LastDecisionBefore(Flipper, 4)
 		if !ok || got != Defect {
-			t.Errorf("LastDecisionBefore(flipper, 3) = %v, %v; want defect, true", got, ok)
+			t.Errorf("LastDecisionBefore(flipper, 4) = %v, %v; want defect, true", got, ok)
 		}
 		if _, ok := store.LastDecisionBefore(Retaliator, 3); ok {
 			t.Error("retaliator had not played before seq 3")

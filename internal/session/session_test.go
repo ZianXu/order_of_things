@@ -42,10 +42,10 @@ func logSignature(log []*platform.Event) []string {
 func TestSessionRunsAFullTournament(t *testing.T) {
 	result, log := run(t, session.Config{Seed: 42, Games: 40})
 
-	if want := 40 * 3; len(log) != want {
-		t.Errorf("log has %d events, want %d (one game plus two decisions each)", len(log), want)
+	if want := 40 * 4; len(log) != want {
+		t.Errorf("log has %d events, want %d (one game, two decisions, and resolution each)", len(log), want)
 	}
-	if want := 40 * 3; result.LogLength != want {
+	if want := 40 * 4; result.LogLength != want {
 		t.Errorf("result.LogLength = %d, want %d", result.LogLength, want)
 	}
 	if len(result.Quarantined) != 0 {

@@ -53,3 +53,10 @@ type GameDecision struct {
 	Strategy Strategy
 	Decision Decision
 }
+
+// GameResolved closes a game after both decisions have been recorded. Keeping
+// resolution as its own event gives the presentation a distinct scoring beat,
+// while making the score transition explicit in the shared event history.
+type GameResolved struct {
+	Id int64
+}

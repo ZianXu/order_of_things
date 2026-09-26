@@ -85,6 +85,14 @@ func (t *GameInjector) HandleEvent(e *platform.Event) any {
 		}
 		return t.newGame()
 	}
+	// A game has two decisions and then a distinct resolution beat. The injector
+	// is the only component that can derive both transitions, so it emits the
+	// resolution event once the second decision has landed.
+	if _, ok := e.Payload.(fsm.GameDecision); ok {
+		if game := t.gameStore.CurrentGame(); game != nil && game.NextToMove() == "" {
+			return fsm.GameResolved{Id: game.Id}
+		}
+	}
 	return nil
 }
 

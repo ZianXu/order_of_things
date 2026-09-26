@@ -125,7 +125,7 @@ func TestPrepareGeneratesTheCanonicalChainUpFront(t *testing.T) {
 		t.Fatal("no canonical chain after Prepare")
 	}
 	recorded, _ := store.Get(session.CanonicalSeed, 10)
-	if want := 10 * 3; len(recorded.Chain) != want {
+	if want := 10 * 4; len(recorded.Chain) != want {
 		t.Errorf("chain has %d roots, want %d", len(recorded.Chain), want)
 	}
 }
@@ -145,7 +145,7 @@ func TestRegistryGeneratesAReferenceForEverySession(t *testing.T) {
 	if !ok {
 		t.Fatalf("no reference recorded for seed %d", handle.Seed)
 	}
-	if want := 20 * 3; len(recorded.Chain) != want {
+	if want := 20 * 4; len(recorded.Chain) != want {
 		t.Errorf("chain has %d roots, want %d (one per event)", len(recorded.Chain), want)
 	}
 	if store.Validator(handle.Seed, 20) == nil {
