@@ -34,12 +34,10 @@ import (
 //go:embed static
 var assets embed.FS
 
-// pollInterval is how often the stream checks the tracker for new events. A
-// frame-length interval keeps a beat-synced visual cue within one display frame
-// of its admission, rather than letting transport timing rotate its phase across
-// the soundtrack. What reaches the browser is still events in order, never a
-// snapshot of aggregate state.
-const pollInterval = 16 * time.Millisecond
+// statusInterval is the fallback for deployment facts such as replica deaths,
+// which are not tracker events. Tournament events wake streams directly from the
+// tracker, keeping beat-synced visual cues out of a polling phase.
+const statusInterval = 250 * time.Millisecond
 
 // maxBody bounds a control request. Every request this server accepts is a few
 // dozen bytes of JSON; without a bound a slow or oversized body can hold a
@@ -261,11 +259,12 @@ func (s *Server) stream(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	flusher.Flush()
 
-	ticker := time.NewTicker(pollInterval)
+	ticker := time.NewTicker(statusInterval)
 	defer ticker.Stop()
 
 	var lastStatus string
 	for {
+		updates := handle.Session.Tracker().Updates()
 		// An open stream is a viewer. Without this a session is only ever touched
 		// when a request arrives, so someone watching -- or paused part way through
 		// explaining it -- would be reclaimed out from under themselves.
@@ -303,6 +302,7 @@ func (s *Server) stream(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
 			return
+		case <-updates:
 		case <-ticker.C:
 		}
 	}

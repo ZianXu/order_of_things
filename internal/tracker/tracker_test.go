@@ -63,6 +63,23 @@ func TestSnapshotTracksTheStream(t *testing.T) {
 	}
 }
 
+func TestTrackerNotifiesWhenItPublishes(t *testing.T) {
+	tr := newTracker(0)
+	updates := tr.Updates()
+	tr.HandleEvent(sequenced(0, fsm.NewGame{Id: 0, StrategyA: fsm.Flipper, StrategyB: fsm.Cooperator}))
+
+	select {
+	case <-updates:
+	default:
+		t.Fatal("publishing a snapshot did not notify subscribers")
+	}
+	select {
+	case <-tr.Updates():
+		t.Fatal("a fresh update channel was already closed")
+	default:
+	}
+}
+
 // Snapshots are published values, not views onto live state: one taken earlier
 // must not change when the store moves on.
 func TestSnapshotsAreImmutable(t *testing.T) {

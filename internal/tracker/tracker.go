@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 
 	"order_of_things/internal/fsm"
@@ -93,6 +94,10 @@ type Tracker struct {
 	gameStore *fsm.GameStore
 	eventloop *platform.Eventloop
 	snapshot  atomic.Pointer[Snapshot]
+	// updates is a broadcast generation: closing it wakes every stream waiting
+	// on the current snapshot, then a fresh channel represents the next change.
+	updatesMu sync.Mutex
+	updates   chan struct{}
 
 	version uint64
 	feed    []FeedEvent
@@ -118,6 +123,7 @@ func newTracker(target int) *Tracker {
 		wins:      make(map[string]int),
 		target:    target,
 		done:      make(chan struct{}),
+		updates:   make(chan struct{}),
 	}
 	t.snapshot.Store(&Snapshot{
 		Seq:         -1,
@@ -132,6 +138,15 @@ func (t *Tracker) Run(ctx context.Context) error { return t.eventloop.Run(ctx) }
 
 // Snapshot returns the most recently published view. Safe from any goroutine.
 func (t *Tracker) Snapshot() Snapshot { return *t.snapshot.Load() }
+
+// Updates closes whenever a newer snapshot is published. Callers should fetch a
+// fresh channel after it closes; all callers waiting on the current generation
+// are woken together.
+func (t *Tracker) Updates() <-chan struct{} {
+	t.updatesMu.Lock()
+	defer t.updatesMu.Unlock()
+	return t.updates
+}
 
 // Done is closed once the tournament reaches its target number of games.
 func (t *Tracker) Done() <-chan struct{} { return t.done }
@@ -170,12 +185,20 @@ func (t *Tracker) HandleEvent(e *platform.Event) any {
 		Wins:        t.winsSnapshot(),
 		StateHash:   t.gameStore.StateHash(),
 	})
+	t.notifyUpdate()
 
 	if t.target > 0 && len(all) >= t.target && !t.closed {
 		t.closed = true
 		close(t.done)
 	}
 	return nil
+}
+
+func (t *Tracker) notifyUpdate() {
+	t.updatesMu.Lock()
+	defer t.updatesMu.Unlock()
+	close(t.updates)
+	t.updates = make(chan struct{})
 }
 
 // record turns each admitted display event into one feed event for the UI.
