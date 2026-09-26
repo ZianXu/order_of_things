@@ -80,7 +80,7 @@ exact event where it first went wrong:
 
 ```
 Rehearsal refused: session: flipper/r1 failed rehearsal at seq 7:
-computed GameDecision{flipper cheat}, canonical is GameDecision{flipper cooperate}
+computed GameDecision{flipper defect}, canonical is GameDecision{flipper cooperate}
 ```
 
 Replaying only the log *so far* is not enough, and the gap is not academic: a

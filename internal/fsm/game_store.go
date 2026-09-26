@@ -193,11 +193,11 @@ func calculatePayoff(game *Game) {
 	switch {
 	case *game.DecisionA == Cooperate && *game.DecisionB == Cooperate:
 		game.PayoffA, game.PayoffB = 2, 2
-	case *game.DecisionA == Cooperate && *game.DecisionB == Cheat:
+	case *game.DecisionA == Cooperate && *game.DecisionB == Defect:
 		game.PayoffA, game.PayoffB = -1, 3
-	case *game.DecisionA == Cheat && *game.DecisionB == Cooperate:
+	case *game.DecisionA == Defect && *game.DecisionB == Cooperate:
 		game.PayoffA, game.PayoffB = 3, -1
-	default: // both cheat: nobody scores
+	default: // both defect: nobody scores
 		game.PayoffA, game.PayoffB = 0, 0
 	}
 }

@@ -196,7 +196,7 @@ tr.live td { background: #fff4e0; }
 tr.fresh td { background: #fdf0d8; }
 .pending { color: var(--line); }
 .cooperate { color: var(--good); font-weight: 700; }
-.cheat { color: var(--bad); font-weight: 700; }
+.defect { color: var(--bad); font-weight: 700; }
 .delta { font-weight: 700; }
 
 .board td:first-child { font-weight: 700; }

@@ -50,7 +50,7 @@ type FeedEvent struct {
 	Strategy fsm.Strategy `json:"strategy,omitempty"`
 	Decision string       `json:"decision,omitempty"`
 
-	// Not omitempty: when both players cheat the payoffs are legitimately zero,
+	// Not omitempty: when both players defect the payoffs are legitimately zero,
 	// and omitting them leaves the page with nothing to render.
 	PayoffA     int                    `json:"payoffA"`
 	PayoffB     int                    `json:"payoffB"`

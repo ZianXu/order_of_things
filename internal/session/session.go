@@ -627,10 +627,8 @@ func (s *Session) Status() []ReplicaStatus {
 // clears it.
 //
 // The condition is eventual, not instantaneous. It is read from the tracker's
-// published snapshot, and a replica killed with an emission already in flight
-// leaves a couple of events still to settle. Expect a brief window after a kill
-// where this reports a stall that then resolves itself; it is a signal for the
-// viewer, not a lock.
+// published snapshot, but an admitted emission can still be waiting at the
+// pacer. That emission will settle the apparent wait, so it is not a stall.
 func (s *Session) Stalled() (bool, string) {
 	// Only the strategy actually due to move can block the game. Its opponent
 	// being dead does not stall anything yet: the game still has this move left
@@ -640,6 +638,13 @@ func (s *Session) Stalled() (bool, string) {
 		return false, ""
 	}
 	if s.componentIsLive(string(next)) {
+		return false, ""
+	}
+	// The tracker has not applied this component's decision yet, but it may
+	// already be admitted and waiting to fan out. In that case killing the
+	// emitter cannot block the tournament, and reporting a stall would make the
+	// UI flash a warning that immediately disappears.
+	if s.sequencer.HasPendingEmission(string(next)) {
 		return false, ""
 	}
 	return true, string(next)

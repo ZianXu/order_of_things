@@ -3,6 +3,7 @@ package platform
 import (
 	"context"
 	"log"
+	"sync"
 
 	"golang.design/x/chann"
 )
@@ -30,6 +31,11 @@ type Sequencer struct {
 	// the same logical decision, so the first to arrive is admitted and the second
 	// is dropped as a duplicate. The race is resolved per event, not per replica.
 	senderSeqHwm map[string]int64
+	// pending records a component emission that has passed admission but has not
+	// yet been fanned out. The pacer can hold that gap open, so observers need
+	// to distinguish it from a component that is genuinely unable to answer.
+	pendingMu sync.RWMutex
+	pending   map[string]bool
 	// pacer optionally throttles admission. Nil means flat out.
 	pacer *Pacer
 }
@@ -41,6 +47,7 @@ func NewSequencer() *Sequencer {
 		clients:      make([]*SequencerClient, 0),
 		sequence:     0,
 		senderSeqHwm: make(map[string]int64),
+		pending:      make(map[string]bool),
 	}
 }
 
@@ -96,6 +103,7 @@ func (s *Sequencer) Run(ctx context.Context) {
 				// of an event should not cost the viewer a tick.
 				continue
 			}
+			s.setPending(event.Header.SenderComponent, true)
 			if s.pacer != nil && !s.pacer.Wait(ctx) {
 				return
 			}
@@ -114,8 +122,27 @@ func (s *Sequencer) Run(ctx context.Context) {
 			for _, client := range s.clients {
 				client.onSequencerEvent(sequenced)
 			}
+			s.setPending(event.Header.SenderComponent, false)
 		}
 	}
+}
+
+// HasPendingEmission reports whether component has an admitted event waiting to
+// be delivered. Safe to call while the sequencer is running.
+func (s *Sequencer) HasPendingEmission(component string) bool {
+	s.pendingMu.RLock()
+	defer s.pendingMu.RUnlock()
+	return s.pending[component]
+}
+
+func (s *Sequencer) setPending(component string, pending bool) {
+	s.pendingMu.Lock()
+	defer s.pendingMu.Unlock()
+	if pending {
+		s.pending[component] = true
+		return
+	}
+	delete(s.pending, component)
 }
 
 // Sequence returns the number of events admitted so far. Only safe to call once

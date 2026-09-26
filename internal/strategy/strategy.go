@@ -160,7 +160,7 @@ func DecideFor(self fsm.Strategy, cfg Config) Decide {
 func inverted(decide Decide) Decide {
 	return func(store *fsm.GameStore, self fsm.Strategy, game *fsm.Game) fsm.Decision {
 		if decide(store, self, game) == fsm.Cooperate {
-			return fsm.Cheat
+			return fsm.Defect
 		}
 		return fsm.Cooperate
 	}
@@ -185,7 +185,7 @@ func impure(decide Decide) Decide {
 		// which halves the detection rate again and makes the defect look
 		// intermittent when it is really the detector that is being starved.
 		if honest == fsm.Cooperate {
-			return fsm.Cheat
+			return fsm.Defect
 		}
 		return fsm.Cooperate
 	}
@@ -254,7 +254,7 @@ func Flip(store *fsm.GameStore, self fsm.Strategy, _ *fsm.Game) fsm.Decision {
 		return fsm.Cooperate
 	}
 	if *previous.Decision(self) == fsm.Cooperate {
-		return fsm.Cheat
+		return fsm.Defect
 	}
 	return fsm.Cooperate
 }
@@ -270,8 +270,8 @@ func Retaliate(store *fsm.GameStore, self fsm.Strategy, game *fsm.Game) fsm.Deci
 	if previous == nil {
 		return fsm.Cooperate
 	}
-	if *previous.Decision(game.Opponent(self)) == fsm.Cheat {
-		return fsm.Cheat
+	if *previous.Decision(game.Opponent(self)) == fsm.Defect {
+		return fsm.Defect
 	}
 	return fsm.Cooperate
 }

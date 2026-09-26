@@ -120,7 +120,7 @@ func TestInjectorInjectsTheNextGameOnlyOnCompletion(t *testing.T) {
 	}
 
 	out := injector.HandleEvent(sequenced(2, fsm.GameDecision{
-		Strategy: genesis.StrategyB, Decision: fsm.Cheat,
+		Strategy: genesis.StrategyB, Decision: fsm.Defect,
 	}))
 	next, ok := out.(fsm.NewGame)
 	if !ok {

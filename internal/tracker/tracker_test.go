@@ -29,7 +29,7 @@ func TestTrackerNeverEmits(t *testing.T) {
 	events := []*platform.Event{
 		{Payload: platform.ReplayComplete{}},
 		sequenced(0, fsm.NewGame{Id: 0, StrategyA: fsm.Flipper, StrategyB: fsm.Cooperator}),
-		sequenced(1, fsm.GameDecision{Strategy: fsm.Flipper, Decision: fsm.Cheat}),
+		sequenced(1, fsm.GameDecision{Strategy: fsm.Flipper, Decision: fsm.Defect}),
 		sequenced(2, fsm.GameDecision{Strategy: fsm.Cooperator, Decision: fsm.Cooperate}),
 	}
 	for i, e := range events {
@@ -45,7 +45,7 @@ func TestSnapshotTracksTheStream(t *testing.T) {
 		t.Errorf("initial snapshot = %+v, want seq -1 and no games", got)
 	}
 
-	seq := playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+	seq := playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 	snapshot := tr.Snapshot()
 	if snapshot.Completed != 1 {
 		t.Errorf("Completed = %d, want 1", snapshot.Completed)
@@ -65,7 +65,7 @@ func TestSnapshotTracksTheStream(t *testing.T) {
 // must not change when the store moves on.
 func TestSnapshotsAreImmutable(t *testing.T) {
 	tr := newTracker(0)
-	seq := playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+	seq := playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 	early := tr.Snapshot()
 
 	for i := 0; i < 5; i++ {
@@ -84,7 +84,7 @@ func TestRecentGamesAreBounded(t *testing.T) {
 	tr := newTracker(0)
 	seq := int64(0)
 	for i := 0; i < recentGames+10; i++ {
-		seq = playGame(tr, seq, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+		seq = playGame(tr, seq, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 	}
 	snapshot := tr.Snapshot()
 	if len(snapshot.Recent) != recentGames {
@@ -97,7 +97,7 @@ func TestRecentGamesAreBounded(t *testing.T) {
 
 func TestDoneFiresOnceAtTheTarget(t *testing.T) {
 	tr := newTracker(2)
-	seq := playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+	seq := playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 	select {
 	case <-tr.Done():
 		t.Fatal("Done fired after 1 of 2 games")
@@ -112,7 +112,7 @@ func TestDoneFiresOnceAtTheTarget(t *testing.T) {
 	}
 
 	// Games beyond the target must not close it a second time.
-	playGame(tr, seq, fsm.Flipper, fsm.Retaliator, fsm.Cheat, fsm.Cheat)
+	playGame(tr, seq, fsm.Flipper, fsm.Retaliator, fsm.Defect, fsm.Defect)
 }
 
 // The feed is what the UI folds. Replica is the only field in it that is not a
@@ -126,7 +126,7 @@ func TestFeedRecordsWhoWonEachPosition(t *testing.T) {
 	})
 	tr.HandleEvent(&platform.Event{
 		Header:  platform.Header{Seq: 1, SenderComponent: "flipper", SenderId: "r0"},
-		Payload: fsm.GameDecision{Strategy: fsm.Flipper, Decision: fsm.Cheat},
+		Payload: fsm.GameDecision{Strategy: fsm.Flipper, Decision: fsm.Defect},
 	})
 
 	feed := tr.Snapshot().Feed
@@ -142,8 +142,8 @@ func TestFeedRecordsWhoWonEachPosition(t *testing.T) {
 	if feed[1].Kind != KindDecision || feed[1].Replica != "r0" {
 		t.Errorf("feed[1] = %+v, want a decision from r0", feed[1])
 	}
-	if feed[1].Strategy != fsm.Flipper || feed[1].Decision != "cheat" {
-		t.Errorf("feed[1] decision = %s %s, want flipper cheat", feed[1].Strategy, feed[1].Decision)
+	if feed[1].Strategy != fsm.Flipper || feed[1].Decision != "defect" {
+		t.Errorf("feed[1] decision = %s %s, want flipper defect", feed[1].Strategy, feed[1].Decision)
 	}
 	if feed[1].GameId != 0 {
 		t.Errorf("feed[1] gameId = %d, want 0", feed[1].GameId)
@@ -160,7 +160,7 @@ func TestFeedRecordsWhoWonEachPosition(t *testing.T) {
 // of the payoff rules.
 func TestFeedDerivesGameCompletion(t *testing.T) {
 	tr := newTracker(0)
-	playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+	playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 
 	feed := tr.Snapshot().Feed
 	if len(feed) != 4 {
@@ -196,7 +196,7 @@ func TestFeedKeepsTheWholeSession(t *testing.T) {
 	seq := int64(0)
 	const games = 40
 	for i := 0; i < games; i++ {
-		seq = playGame(tr, seq, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+		seq = playGame(tr, seq, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 	}
 	feed := tr.Snapshot().Feed
 	if want := games * 4; len(feed) != want {
@@ -213,13 +213,13 @@ func TestFeedKeepsTheWholeSession(t *testing.T) {
 // believes is an immutable view watches it change.
 func TestSnapshotCollectionsAreCopies(t *testing.T) {
 	tr := newTracker(0)
-	seq := playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+	seq := playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 	early := tr.Snapshot()
 
 	if early.CurrentGame != nil {
 		t.Fatal("a completed game left something in flight")
 	}
-	playGame(tr, seq, fsm.Retaliator, fsm.CopyLeader, fsm.Cheat, fsm.Cheat)
+	playGame(tr, seq, fsm.Retaliator, fsm.CopyLeader, fsm.Defect, fsm.Defect)
 
 	if len(early.Feed) != 4 {
 		t.Errorf("an earlier snapshot's feed grew to %d events", len(early.Feed))
@@ -244,7 +244,7 @@ func TestSnapshotPublishesTheGameInFlight(t *testing.T) {
 		t.Errorf("NextToMove = %q, want flipper", got)
 	}
 
-	tr.HandleEvent(sequenced(1, fsm.GameDecision{Strategy: fsm.Flipper, Decision: fsm.Cheat}))
+	tr.HandleEvent(sequenced(1, fsm.GameDecision{Strategy: fsm.Flipper, Decision: fsm.Defect}))
 	if published.CurrentGame.DecisionA != nil {
 		t.Error("the published copy changed when the store did")
 	}
@@ -253,11 +253,11 @@ func TestSnapshotPublishesTheGameInFlight(t *testing.T) {
 	}
 }
 
-// Both players cheating scores zero for each, which is a real result and not an
+// Both players defecting scores zero for each, which is a real result and not an
 // absent one. It has to survive the trip to the page.
 func TestFeedCarriesZeroPayoffs(t *testing.T) {
 	tr := newTracker(0)
-	playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cheat)
+	playGame(tr, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Defect)
 
 	completion := tr.Snapshot().Feed[3]
 	if completion.Kind != KindGameCompleted {

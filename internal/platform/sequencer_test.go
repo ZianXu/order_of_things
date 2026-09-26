@@ -81,6 +81,45 @@ func TestSequencerAssignsMonotonicSeqAndFansOutInOrder(t *testing.T) {
 	}
 }
 
+func TestSequencerMarksAnAdmittedEmissionPendingUntilItFansOut(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	done := make(chan struct{})
+	defer func() {
+		cancel()
+		<-done
+	}()
+	pacer := NewPacer(0)
+	pacer.Pause()
+	s := NewSequencer()
+	s.SetPacer(pacer)
+	go func() {
+		defer close(done)
+		s.Run(ctx)
+	}()
+
+	producer := NewSequencerClient("producer", "p1", s)
+	join(t, ctx, s, producer, 0)
+	producer.Send("decision")
+
+	deadline := time.Now().Add(testTimeout)
+	for !s.HasPendingEmission("producer") {
+		if time.Now().After(deadline) {
+			t.Fatal("admitted emission was never marked pending")
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	pacer.Resume()
+	mustRead(t, ctx, producer)
+	deadline = time.Now().Add(testTimeout)
+	for s.HasPendingEmission("producer") {
+		if time.Now().After(deadline) {
+			t.Fatal("pending emission remained marked after fanout")
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
 func TestLateSubscriberReceivesFullReplayThenActivationMarker(t *testing.T) {
 	s, ctx := startSequencer(t)
 

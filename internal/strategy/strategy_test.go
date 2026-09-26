@@ -32,7 +32,7 @@ func TestCooperateReadsNothing(t *testing.T) {
 		t.Errorf("Cooperate = %v, want cooperate", got)
 	}
 	store := fsm.NewGameStore()
-	play(store, 0, fsm.Cooperator, fsm.Flipper, fsm.Cheat, fsm.Cheat)
+	play(store, 0, fsm.Cooperator, fsm.Flipper, fsm.Defect, fsm.Defect)
 	if got := Cooperate(store, fsm.Cooperator, nil); got != fsm.Cooperate {
 		t.Errorf("Cooperate after a history = %v, want cooperate", got)
 	}
@@ -47,7 +47,7 @@ func TestFlipAlternatesItsOwnDecisions(t *testing.T) {
 	}
 
 	seq := resolve(store, 0, fsm.Cooperate, fsm.Cooperate)
-	for round, want := range []fsm.Decision{fsm.Cheat, fsm.Cooperate, fsm.Cheat} {
+	for round, want := range []fsm.Decision{fsm.Defect, fsm.Cooperate, fsm.Defect} {
 		game := pending(store, seq, fsm.Flipper, fsm.Cooperator)
 		got := Flip(store, fsm.Flipper, game)
 		if got != want {
@@ -61,12 +61,12 @@ func TestFlipAlternatesItsOwnDecisions(t *testing.T) {
 // against a different opponent still flips it.
 func TestFlipIgnoresWhoTheOpponentWas(t *testing.T) {
 	store := fsm.NewGameStore()
-	seq := play(store, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
-	seq = play(store, seq, fsm.Retaliator, fsm.CopyLeader, fsm.Cheat, fsm.Cheat)
+	seq := play(store, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
+	seq = play(store, seq, fsm.Retaliator, fsm.CopyLeader, fsm.Defect, fsm.Defect)
 
 	game := pending(store, seq, fsm.Flipper, fsm.CopyLeader)
 	if got := Flip(store, fsm.Flipper, game); got != fsm.Cooperate {
-		t.Errorf("Flip = %v, want cooperate (flipping its own last cheat)", got)
+		t.Errorf("Flip = %v, want cooperate (flipping its own last defect)", got)
 	}
 }
 
@@ -77,7 +77,7 @@ func TestRetaliateMirrorsThisOpponentsLastMove(t *testing.T) {
 		want         fsm.Decision
 	}{
 		{"opens by cooperating", nil, fsm.Cooperate},
-		{"punishes a cheat", ptr(fsm.Cheat), fsm.Cheat},
+		{"punishes a defect", ptr(fsm.Defect), fsm.Defect},
 		{"forgives once cooperation resumes", ptr(fsm.Cooperate), fsm.Cooperate},
 	}
 	for _, tc := range tests {
@@ -96,21 +96,21 @@ func TestRetaliateMirrorsThisOpponentsLastMove(t *testing.T) {
 }
 
 // Retaliate's view is the pair's history and nothing wider: another strategy
-// cheating it does not change how it treats this opponent.
+// defecting it does not change how it treats this opponent.
 func TestRetaliateScopesToThePair(t *testing.T) {
 	store := fsm.NewGameStore()
 	seq := play(store, 0, fsm.Retaliator, fsm.Flipper, fsm.Cooperate, fsm.Cooperate)
-	seq = play(store, seq, fsm.Retaliator, fsm.CopyLeader, fsm.Cooperate, fsm.Cheat)
+	seq = play(store, seq, fsm.Retaliator, fsm.CopyLeader, fsm.Cooperate, fsm.Defect)
 
 	againstFlipper := pending(store, seq, fsm.Retaliator, fsm.Flipper)
 	if got := Retaliate(store, fsm.Retaliator, againstFlipper); got != fsm.Cooperate {
-		t.Errorf("against flipper = %v, want cooperate; copy-leader's cheat is not flipper's business", got)
+		t.Errorf("against flipper = %v, want cooperate; copy-leader's defect is not flipper's business", got)
 	}
 	seq = resolve(store, seq, fsm.Cooperate, fsm.Cooperate)
 
 	againstCopyLeader := pending(store, seq, fsm.Retaliator, fsm.CopyLeader)
-	if got := Retaliate(store, fsm.Retaliator, againstCopyLeader); got != fsm.Cheat {
-		t.Errorf("against copy-leader = %v, want cheat", got)
+	if got := Retaliate(store, fsm.Retaliator, againstCopyLeader); got != fsm.Defect {
+		t.Errorf("against copy-leader = %v, want defect", got)
 	}
 }
 
@@ -126,19 +126,19 @@ func TestCopyLeaderCooperatesBeforeAnyoneLeads(t *testing.T) {
 
 func TestCopyLeaderCopiesTheLeadersLastMove(t *testing.T) {
 	store := fsm.NewGameStore()
-	// Flipper cheats a cooperator and takes the lead on +3.
-	seq := play(store, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+	// Flipper defects a cooperator and takes the lead on +3.
+	seq := play(store, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 	if got := store.LeadingStrategy(); got != fsm.Flipper {
 		t.Fatalf("leader = %q, want flipper (test setup)", got)
 	}
 
 	game := pending(store, seq, fsm.CopyLeader, fsm.Retaliator)
-	if got := CopyLeader(true)(store, fsm.CopyLeader, game); got != fsm.Cheat {
-		t.Errorf("CopyLeader = %v, want cheat (copying the leader)", got)
+	if got := CopyLeader(true)(store, fsm.CopyLeader, game); got != fsm.Defect {
+		t.Errorf("CopyLeader = %v, want defect (copying the leader)", got)
 	}
 
 	// The leader switches to cooperating; so does CopyLeader.
-	seq = resolve(store, seq, fsm.Cheat, fsm.Cheat)
+	seq = resolve(store, seq, fsm.Defect, fsm.Defect)
 	seq = play(store, seq, fsm.Flipper, fsm.Retaliator, fsm.Cooperate, fsm.Cooperate)
 	if got := store.LeadingStrategy(); got != fsm.Flipper {
 		t.Fatalf("leader = %q, want flipper (test setup)", got)
@@ -154,7 +154,7 @@ func TestCopyLeaderCopiesTheLeadersLastMove(t *testing.T) {
 // The unwatermarked read answers anyway, which is the injected bug.
 func TestWatermarkedCopyLeaderWaitsOnAnUnresolvedEarlierGame(t *testing.T) {
 	store := fsm.NewGameStore()
-	play(store, 0, fsm.Flipper, fsm.Cooperator, fsm.Cheat, fsm.Cooperate)
+	play(store, 0, fsm.Flipper, fsm.Cooperator, fsm.Defect, fsm.Cooperate)
 
 	// A game admitted at seq 3 that has not resolved, and ours admitted later.
 	earlier := pending(store, 3, fsm.Retaliator, fsm.Cooperator)
@@ -198,7 +198,7 @@ func TestBothCopyLeaderVariantsAgreeWhileOnlyOneGameIsInFlight(t *testing.T) {
 			t.Fatalf("round %d: watermarked read waited, but only one game is ever in flight", round)
 		}
 
-		seq = resolve(store, seq, fsm.Cheat, fsm.Cooperate)
+		seq = resolve(store, seq, fsm.Defect, fsm.Cooperate)
 	}
 }
 

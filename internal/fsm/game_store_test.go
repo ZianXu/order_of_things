@@ -32,9 +32,9 @@ func TestPayoffMatrix(t *testing.T) {
 		wantA, wantB int
 	}{
 		{"both cooperate", Cooperate, Cooperate, 2, 2},
-		{"a cooperates, b cheats", Cooperate, Cheat, -1, 3},
-		{"a cheats, b cooperates", Cheat, Cooperate, 3, -1},
-		{"both cheat", Cheat, Cheat, 0, 0},
+		{"a cooperates, b defects", Cooperate, Defect, -1, 3},
+		{"a defects, b cooperates", Defect, Cooperate, 3, -1},
+		{"both defect", Defect, Defect, 0, 0},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestGameCompletesOnlyOnceBothDecisionsLand(t *testing.T) {
 		t.Fatal("game left flight after a single decision")
 	}
 
-	got := apply(store, GameDecision{Strategy: Flipper, Decision: Cheat})
+	got := apply(store, GameDecision{Strategy: Flipper, Decision: Defect})
 	if len(got) != 1 {
 		t.Fatalf("completed %d games on the second decision, want 1", len(got))
 	}
@@ -89,7 +89,7 @@ func TestGameCompletesOnlyOnceBothDecisionsLand(t *testing.T) {
 func TestScoresAccumulateAcrossGames(t *testing.T) {
 	store := NewGameStore()
 	playGame(store, 0, Cooperator, Flipper, Cooperate, Cooperate) // +2 / +2
-	playGame(store, 1, Cooperator, Flipper, Cooperate, Cheat)     // -1 / +3
+	playGame(store, 1, Cooperator, Flipper, Cooperate, Defect)     // -1 / +3
 
 	if got, want := store.Score(Cooperator), 1; got != want {
 		t.Errorf("Score(Cooperator) = %d, want %d", got, want)
@@ -128,9 +128,9 @@ func TestOverlappingGamePanics(t *testing.T) {
 // doc's correspondence table, expressed as scopes over the same event history.
 func TestHistoryQueriesScopeToTheRightSlice(t *testing.T) {
 	store := NewGameStore()
-	playGame(store, 0, Cooperator, Flipper, Cooperate, Cheat)
+	playGame(store, 0, Cooperator, Flipper, Cooperate, Defect)
 	playGame(store, 1, Cooperator, Retaliator, Cooperate, Cooperate)
-	playGame(store, 2, Flipper, Retaliator, Cheat, Cheat)
+	playGame(store, 2, Flipper, Retaliator, Defect, Defect)
 
 	if got := store.LastCompletedGame().Id; got != 2 {
 		t.Errorf("LastCompletedGame = %d, want 2", got)
@@ -156,14 +156,14 @@ func TestHistoryQueriesScopeToTheRightSlice(t *testing.T) {
 
 func TestGameAccessors(t *testing.T) {
 	store := NewGameStore()
-	playGame(store, 0, Cooperator, Flipper, Cooperate, Cheat)
+	playGame(store, 0, Cooperator, Flipper, Cooperate, Defect)
 	game := store.LastCompletedGame()
 
 	if got := *game.Decision(Cooperator); got != Cooperate {
 		t.Errorf("Decision(Cooperator) = %v, want cooperate", got)
 	}
-	if got := *game.Decision(Flipper); got != Cheat {
-		t.Errorf("Decision(Flipper) = %v, want cheat", got)
+	if got := *game.Decision(Flipper); got != Defect {
+		t.Errorf("Decision(Flipper) = %v, want defect", got)
 	}
 	if got := game.Decision(Retaliator); got != nil {
 		t.Errorf("Decision(Retaliator) = %v, want nil", got)
@@ -192,8 +192,8 @@ func TestNoLeaderBeforeAnyGameCompletes(t *testing.T) {
 
 func TestLeadingStrategyPicksHighestScore(t *testing.T) {
 	store := NewGameStore()
-	playGame(store, 0, Cooperator, Flipper, Cooperate, Cheat) // -1 / +3
-	playGame(store, 1, Retaliator, CopyLeader, Cheat, Cheat)  // 0 / 0
+	playGame(store, 0, Cooperator, Flipper, Cooperate, Defect) // -1 / +3
+	playGame(store, 1, Retaliator, CopyLeader, Defect, Defect)  // 0 / 0
 
 	if got := store.LeadingStrategy(); got != Flipper {
 		t.Errorf("LeadingStrategy = %q, want flipper", got)
@@ -229,8 +229,8 @@ func TestLeadingStrategyIsDeterministicUnderTies(t *testing.T) {
 
 func TestLeaderboardIsRankedAndDeterministic(t *testing.T) {
 	store := NewGameStore()
-	playGame(store, 0, Cooperator, Flipper, Cooperate, Cheat)    // coop -1, flip +3
-	playGame(store, 1, Retaliator, CopyLeader, Cheat, Cooperate) // ret +3, copy -1
+	playGame(store, 0, Cooperator, Flipper, Cooperate, Defect)    // coop -1, flip +3
+	playGame(store, 1, Retaliator, CopyLeader, Defect, Cooperate) // ret +3, copy -1
 
 	want := []LeaderboardEntry{
 		{Strategy: Flipper, Score: 3},
@@ -265,10 +265,10 @@ func TestReplayReproducesIdenticalState(t *testing.T) {
 	history := []any{
 		NewGame{Id: 0, StrategyA: Cooperator, StrategyB: Flipper},
 		GameDecision{Strategy: Cooperator, Decision: Cooperate},
-		GameDecision{Strategy: Flipper, Decision: Cheat},
+		GameDecision{Strategy: Flipper, Decision: Defect},
 		NewGame{Id: 1, StrategyA: Retaliator, StrategyB: CopyLeader},
-		GameDecision{Strategy: Retaliator, Decision: Cheat},
-		GameDecision{Strategy: CopyLeader, Decision: Cheat},
+		GameDecision{Strategy: Retaliator, Decision: Defect},
+		GameDecision{Strategy: CopyLeader, Decision: Defect},
 		NewGame{Id: 2, StrategyA: Flipper, StrategyB: Retaliator},
 		GameDecision{Strategy: Flipper, Decision: Cooperate},
 		GameDecision{Strategy: Retaliator, Decision: Cooperate},
@@ -305,7 +305,7 @@ func TestStateHashAdvancesWithTheStream(t *testing.T) {
 		for _, payload := range []any{
 			NewGame{Id: int64(i), StrategyA: Cooperator, StrategyB: Flipper},
 			GameDecision{Strategy: Cooperator, Decision: Cooperate},
-			GameDecision{Strategy: Flipper, Decision: Cheat},
+			GameDecision{Strategy: Flipper, Decision: Defect},
 		} {
 			store.ApplyEvent(seq, payload)
 			seq++
@@ -322,10 +322,10 @@ func TestIdenticalHistoriesProduceIdenticalStateRoots(t *testing.T) {
 	history := []any{
 		NewGame{Id: 0, StrategyA: Cooperator, StrategyB: Flipper},
 		GameDecision{Strategy: Cooperator, Decision: Cooperate},
-		GameDecision{Strategy: Flipper, Decision: Cheat},
+		GameDecision{Strategy: Flipper, Decision: Defect},
 		NewGame{Id: 1, StrategyA: Retaliator, StrategyB: CopyLeader},
-		GameDecision{Strategy: Retaliator, Decision: Cheat},
-		GameDecision{Strategy: CopyLeader, Decision: Cheat},
+		GameDecision{Strategy: Retaliator, Decision: Defect},
+		GameDecision{Strategy: CopyLeader, Decision: Defect},
 	}
 	live, replayed := NewGameStore(), NewGameStore()
 	apply(live, history...)
@@ -346,13 +346,13 @@ func TestIdenticalHistoriesProduceIdenticalStateRoots(t *testing.T) {
 // that lands on the same final scores.
 func TestStateHashCatchesDivergenceThatEndsInTheSamePlace(t *testing.T) {
 	honest := NewGameStore()
-	playGame(honest, 0, Cooperator, Flipper, Cooperate, Cheat) // -1 / +3
-	playGame(honest, 1, Cooperator, Flipper, Cheat, Cooperate) // +3 / -1
+	playGame(honest, 0, Cooperator, Flipper, Cooperate, Defect) // -1 / +3
+	playGame(honest, 1, Cooperator, Flipper, Defect, Cooperate) // +3 / -1
 
 	// Same two games, same final scores, opposite order.
 	diverged := NewGameStore()
-	playGame(diverged, 0, Cooperator, Flipper, Cheat, Cooperate)
-	playGame(diverged, 1, Cooperator, Flipper, Cooperate, Cheat)
+	playGame(diverged, 0, Cooperator, Flipper, Defect, Cooperate)
+	playGame(diverged, 1, Cooperator, Flipper, Cooperate, Defect)
 
 	if !reflect.DeepEqual(honest.Leaderboard(), diverged.Leaderboard()) {
 		t.Fatal("test setup: the two histories should end on the same scores")
@@ -374,8 +374,8 @@ func playGameAt(store *GameStore, seq int64, a, b Strategy, da, db Decision) int
 
 func TestWatermarkScopedReads(t *testing.T) {
 	store := NewGameStore()
-	playGameAt(store, 0, Flipper, Cooperator, Cheat, Cooperate) // seq 0-2: flipper +3
-	playGameAt(store, 3, Retaliator, CopyLeader, Cheat, Cheat)  // seq 3-5: nobody scores
+	playGameAt(store, 0, Flipper, Cooperator, Defect, Cooperate) // seq 0-2: flipper +3
+	playGameAt(store, 3, Retaliator, CopyLeader, Defect, Defect)  // seq 3-5: nobody scores
 
 	t.Run("scopes the leader to a point in the stream", func(t *testing.T) {
 		if got := store.LeaderBefore(0); got != "" {
@@ -394,8 +394,8 @@ func TestWatermarkScopedReads(t *testing.T) {
 			t.Error("LastDecisionBefore(flipper, 0) found a decision before any game")
 		}
 		got, ok := store.LastDecisionBefore(Flipper, 3)
-		if !ok || got != Cheat {
-			t.Errorf("LastDecisionBefore(flipper, 3) = %v, %v; want cheat, true", got, ok)
+		if !ok || got != Defect {
+			t.Errorf("LastDecisionBefore(flipper, 3) = %v, %v; want defect, true", got, ok)
 		}
 		if _, ok := store.LastDecisionBefore(Retaliator, 3); ok {
 			t.Error("retaliator had not played before seq 3")
@@ -448,7 +448,7 @@ func TestCloneIsIndependentOfTheStore(t *testing.T) {
 	store.ApplyEvent(0, NewGame{Id: 0, StrategyA: Cooperator, StrategyB: Flipper})
 	published := store.CurrentGame().Clone()
 
-	store.ApplyEvent(1, GameDecision{Strategy: Cooperator, Decision: Cheat})
+	store.ApplyEvent(1, GameDecision{Strategy: Cooperator, Decision: Defect})
 
 	if published.DecisionA != nil {
 		t.Error("a decision applied after cloning appeared in the clone")

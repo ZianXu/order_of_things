@@ -5,15 +5,15 @@ type Decision int
 const (
 	Unknown Decision = iota
 	Cooperate
-	Cheat
+	Defect
 )
 
 func (d Decision) String() string {
 	switch d {
 	case Cooperate:
 		return "cooperate"
-	case Cheat:
-		return "cheat"
+	case Defect:
+		return "defect"
 	default:
 		return "unknown"
 	}
@@ -30,7 +30,7 @@ const (
 	// Flipper always flips its own previous decision. Depends on private
 	// per-strategy state: no coordination with other strategies.
 	Flipper Strategy = "flipper"
-	// Retaliator retaliates once with cheat if the opponent cheated. Depends on
+	// Retaliator retaliates once with defect if the opponent defected. Depends on
 	// this specific opponent's last move: coordination within the pair only.
 	Retaliator Strategy = "retaliator"
 	// CopyLeader copies the last decision of the current leading strategy.
