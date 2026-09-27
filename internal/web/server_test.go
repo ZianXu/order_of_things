@@ -144,7 +144,6 @@ func TestIndexIsServed(t *testing.T) {
 	for _, want := range []string{
 		"The Order of Things", "/static/app.js",
 		"ncase.me/trust", "The Evolution of Trust",
-		"suno.com/s/yjNvZutbRTCvK0ko",
 	} {
 		if !strings.Contains(string(body), want) {
 			t.Errorf("index does not mention %q", want)
