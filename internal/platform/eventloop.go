@@ -108,6 +108,7 @@ func (e *Eventloop) Run(ctx context.Context) error {
 		if event == nil {
 			return nil
 		}
+		wasReplaying := e.replaying
 		payload := e.eventHandler(event)
 
 		// Validate before emitting. A replica whose state has diverged must not
@@ -117,6 +118,21 @@ func (e *Eventloop) Run(ctx context.Context) error {
 			e.sequencerClient.quarantined = true
 			e.sequencerClient.Close()
 			return err
+		}
+		if wasReplaying && !event.IsReplayComplete() && payload != nil {
+			// A replay response proves this replica reached the same conclusion as
+			// the committed history. Keep it local until that history either
+			// confirms it or ends.
+			e.sequencerClient.ExpectReplay(payload)
+			continue
+		}
+		if event.IsReplayComplete() {
+			if pending := e.sequencerClient.FinishReplay(); pending != nil {
+				if payload != nil {
+					panic("eventloop: replay ended with both a pending and bootstrap emission")
+				}
+				payload = pending
+			}
 		}
 		if payload != nil {
 			e.sequencerClient.Send(payload)

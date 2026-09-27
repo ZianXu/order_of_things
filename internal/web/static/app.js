@@ -393,6 +393,11 @@ function showDecision(event) {
   const replica = $(`rep-${event.strategy}-${event.replica}`);
   if (!replica) return;
 
+  // This is an ephemeral cue, unlike the table entry. A replica can be killed
+  // and restarted while its previous cue is still fading, so do not let that
+  // old DOM node make one newly admitted decision look like two.
+  replica.querySelectorAll(".decision-pop").forEach(label => label.remove());
+
   const label = document.createElement("div");
   label.className = `decision-pop ${event.decision}`;
   label.textContent = event.decision;
@@ -456,6 +461,7 @@ function pulse(seq) {
 function paintStatus() {
   const s = state.status;
   if (!s) return;
+
   $("metaGame").textContent = s.completed;
   $("metaHash").textContent = s.stateHash;
   $("pause").textContent = s.running ? "Pause" : "Resume";

@@ -54,6 +54,35 @@ func TestPacerUsesAnAbsoluteBeatGrid(t *testing.T) {
 	}
 }
 
+func TestPacerRejoinsTheBeatGridAfterAnIdleGap(t *testing.T) {
+	const interval = 20 * time.Millisecond
+	pacer := NewPacer(interval)
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+
+	if !pacer.Wait(ctx) {
+		t.Fatal("first beat was cancelled")
+	}
+	// Model a stalled tournament: no event asks the pacer to wait for several
+	// beats. Recovery waits for the next beat on the existing grid instead of
+	// catching up in a burst or creating a new, out-of-phase grid.
+	time.Sleep(5*interval + interval/2)
+	started := time.Now()
+	if !pacer.Wait(ctx) {
+		t.Fatal("recovery beat was cancelled")
+	}
+	if elapsed := time.Since(started); elapsed < interval/5 {
+		t.Fatalf("recovery beat arrived after %v, want the next grid beat", elapsed)
+	}
+	started = time.Now()
+	if !pacer.Wait(ctx) {
+		t.Fatal("post-recovery beat was cancelled")
+	}
+	if elapsed := time.Since(started); elapsed < interval/2 {
+		t.Fatalf("post-recovery beat arrived after %v, want roughly one interval", elapsed)
+	}
+}
+
 func TestPacerPauseBlocksUntilResume(t *testing.T) {
 	pacer := NewPacer(0)
 	ctx := context.Background()

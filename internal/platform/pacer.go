@@ -79,7 +79,15 @@ func (p *Pacer) Wait(ctx context.Context) bool {
 			p.nextBeat = time.Now().Add(interval)
 		}
 		delay := time.Until(p.nextBeat)
-		if delay < 0 {
+		if delay < -interval {
+			// Nothing was waiting while the tournament was stalled. Missed beats
+			// are not deferred actions, so skip to the next beat on the original
+			// grid rather than draining a whole game at once or starting a new
+			// rhythm out of phase with the soundtrack.
+			missed := time.Since(p.nextBeat)/interval + 1
+			p.nextBeat = p.nextBeat.Add(missed * interval)
+			delay = time.Until(p.nextBeat)
+		} else if delay < 0 {
 			delay = 0
 		}
 		generation := p.waitGeneration

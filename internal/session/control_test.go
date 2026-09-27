@@ -206,6 +206,13 @@ func TestKillingBothReplicasStallsTheTournament(t *testing.T) {
 	if result.Games != 100 {
 		t.Errorf("completed %d of 100 games after recovering", result.Games)
 	}
+	// A recovery replays previously derived decisions, but the sequencer must
+	// reject those copies. Each game has exactly four display events: new game,
+	// two decisions, and resolution. If a recovered replica admitted a second
+	// decision, this is the first count that would grow.
+	if got, want := len(s.Tracker().Snapshot().Feed), 4*result.Games; got != want {
+		t.Errorf("feed has %d events after recovery, want %d", got, want)
+	}
 	if len(result.Quarantined) != 0 {
 		t.Errorf("a healthy restart quarantined something: %v", result.Quarantined)
 	}

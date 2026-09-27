@@ -42,9 +42,13 @@ type SequencerClient struct {
 	quarantined       bool
 	senderSeq         int64
 	inflightEvent     *Event
-	sequencer         *Sequencer
-	ingressCh         *chann.Chann[*Event]
-	egressCh          *chann.Chann[*Event]
+	// replayExpected is an emission derived while rebuilding the log. It stays
+	// local until the matching committed event arrives; only an expectation left
+	// over at ReplayComplete is a genuinely new event to send live.
+	replayExpected any
+	sequencer      *Sequencer
+	ingressCh      *chann.Chann[*Event]
+	egressCh       *chann.Chann[*Event]
 }
 
 func NewSequencerClient(
@@ -66,15 +70,10 @@ func NewSequencerClient(
 // value type: it is compared by equality to detect replica divergence, and it is
 // fanned out by value to every other component.
 //
-// Emissions are transmitted unconditionally, including the ones a replica
-// re-derives while replaying the log. Suppressing those would be wrong in both
-// directions: a replica that joins a cold-start stream after the first event is
-// admitted would swallow a decision nobody else is going to make, and a replica
-// rejoining a running stream would drift out of senderSeq alignment. Letting them
-// through costs nothing -- the sequencer drops anything at or below the
-// component's high-water mark -- and it turns replay into a live validation pass,
-// since each re-derived emission is then compared against what the log actually
-// recorded.
+// Send is for live emissions. During replay Eventloop records the derived
+// response locally with ExpectReplay instead, then compares it with the
+// committed event that follows. Historical events are never sent back to the
+// sequencer merely to be deduplicated.
 func (c *SequencerClient) Send(payload any) {
 	if c.inflightEvent != nil {
 		// The divergence check pairs each emission with the sequenced event that
@@ -96,6 +95,23 @@ func (c *SequencerClient) Send(payload any) {
 	c.inflightEvent = event
 	// In a real deployment this would go over the network.
 	c.ingressCh.In() <- event
+}
+
+// ExpectReplay records an emission derived while replaying. The next committed
+// event from this component must match it exactly. Eventloop calls
+// FinishReplay at the activation marker: a remaining expectation belongs to an
+// unfinished live turn and is returned for normal transmission.
+func (c *SequencerClient) ExpectReplay(payload any) {
+	if c.replayExpected != nil {
+		panic("sequencer client: replay derived a second unsettled emission")
+	}
+	c.replayExpected = payload
+}
+
+func (c *SequencerClient) FinishReplay() any {
+	payload := c.replayExpected
+	c.replayExpected = nil
+	return payload
 }
 
 // onSequencerEvent is called on the sequencer goroutine.
@@ -129,7 +145,7 @@ func (c *SequencerClient) Read(ctx context.Context) (*Event, error) {
 			// replica that lost every race so far can still take the next one.
 			c.senderSeq = event.Header.SenderSeq + 1
 		}
-		if err := c.checkInflight(event); err != nil {
+		if err := c.checkEmission(event); err != nil {
 			c.quarantined = true
 			c.Close()
 			return nil, err
@@ -157,15 +173,28 @@ func (c *SequencerClient) IsQuarantined() bool {
 	return c.quarantined
 }
 
-// checkInflight compares a sequenced event from this component against what this
+// checkEmission compares a sequenced event from this component against what this
 // replica computed for the same position.
 //
 // The event may be this replica's own (it won the race) or its sibling's (it
 // lost). Either way the payloads must be identical, because both replicas run the
 // same deterministic FSM over the same event history. A mismatch means one of
 // them is not deterministic.
-func (c *SequencerClient) checkInflight(event *Event) error {
+func (c *SequencerClient) checkEmission(event *Event) error {
 	if event.Header.SenderComponent != c.senderComponent {
+		return nil
+	}
+	if c.replayExpected != nil {
+		expected := c.replayExpected
+		c.replayExpected = nil
+		if expected != event.Payload {
+			return &DivergenceError{
+				Component: c.senderComponent,
+				ReplicaId: c.senderComponentId,
+				Expected:  expected,
+				Received:  event.Payload,
+			}
+		}
 		return nil
 	}
 	if c.inflightEvent == nil {

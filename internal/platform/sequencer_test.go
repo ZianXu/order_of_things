@@ -290,10 +290,10 @@ func TestReplayRealignsSenderSeqWithTheLog(t *testing.T) {
 	}
 }
 
-// A replica that re-derives emissions while replaying must not have them
-// swallowed: at cold start there is no sibling that already made them, so
-// suppressing would lose the event entirely and stall the stream.
-func TestEmissionsDerivedFromReplayedEventsAreTransmitted(t *testing.T) {
+// A response derived from the final replayed event has no committed counterpart.
+// Replay keeps it local until the marker, then releases it as the first live
+// emission.
+func TestResponseNeededAtEndOfReplayIsTransmitted(t *testing.T) {
 	s, ctx := startSequencer(t)
 
 	seed := NewSequencerClient("seed", "s1", s)
@@ -310,10 +310,50 @@ func TestEmissionsDerivedFromReplayedEventsAreTransmitted(t *testing.T) {
 	if got := mustRead(t, ctx, responder).Payload; got != "question" {
 		t.Fatalf("replayed %v, want \"question\"", got)
 	}
+	responder.ExpectReplay("answer")
+	if marker := mustRead(t, ctx, responder); !marker.IsReplayComplete() {
+		t.Fatalf("expected replay marker, got %#v", marker.Payload)
+	}
+	if pending := responder.FinishReplay(); pending != "answer" {
+		t.Fatalf("pending replay response = %#v, want \"answer\"", pending)
+	}
 	responder.Send("answer")
 
 	if got := mustRead(t, ctx, observer).Payload; got != "answer" {
 		t.Fatalf("observer saw %v, want \"answer\"", got)
+	}
+}
+
+// A historical response is compared with the committed event locally. It is
+// never put back onto ingress for the sequencer to reject as a duplicate.
+func TestHistoricalReplayResponseStaysLocal(t *testing.T) {
+	s, ctx := startSequencer(t)
+
+	seed := NewSequencerClient("seed", "s1", s)
+	responder := NewSequencerClient("responder", "live", s)
+	join(t, ctx, s, seed, 0)
+	join(t, ctx, s, responder, 0)
+	seed.Send("question")
+	mustRead(t, ctx, seed)
+	mustRead(t, ctx, responder)
+	responder.Send("answer")
+	mustRead(t, ctx, seed)
+	mustRead(t, ctx, responder)
+
+	rejoin := NewSequencerClient("responder", "rejoin", s)
+	s.Subscribe(rejoin)
+	if got := mustRead(t, ctx, rejoin).Payload; got != "question" {
+		t.Fatalf("replayed %v, want \"question\"", got)
+	}
+	rejoin.ExpectReplay("answer")
+	if got := mustRead(t, ctx, rejoin).Payload; got != "answer" {
+		t.Fatalf("replayed %v, want \"answer\"", got)
+	}
+	if marker := mustRead(t, ctx, rejoin); !marker.IsReplayComplete() {
+		t.Fatalf("expected replay marker, got %#v", marker.Payload)
+	}
+	if pending := rejoin.FinishReplay(); pending != nil {
+		t.Fatalf("historical replay response remained pending: %#v", pending)
 	}
 }
 
