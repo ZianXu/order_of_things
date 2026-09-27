@@ -19,6 +19,10 @@ type Header struct {
 type Event struct {
 	Header  Header
 	Payload any // immutable and opaque
+	// origin is set only for events emitted by a SequencerClient. It lets the
+	// sequencer discard work from a replica that died before its queued event
+	// reached the log. Raw events used by low-level tests have no origin.
+	origin *SequencerClient
 }
 
 // ReplayComplete is delivered in-band on a client's egress stream once the

@@ -35,7 +35,7 @@ type Sequencer struct {
 	// yet been fanned out. The pacer can hold that gap open, so observers need
 	// to distinguish it from a component that is genuinely unable to answer.
 	pendingMu sync.RWMutex
-	pending   map[string]bool
+	pending   map[string]*Event
 	// pacer optionally throttles admission. Nil means flat out.
 	pacer *Pacer
 }
@@ -47,7 +47,7 @@ func NewSequencer() *Sequencer {
 		clients:      make([]*SequencerClient, 0),
 		sequence:     0,
 		senderSeqHwm: make(map[string]int64),
-		pending:      make(map[string]bool),
+		pending:      make(map[string]*Event),
 	}
 }
 
@@ -98,15 +98,20 @@ func (s *Sequencer) Run(ctx context.Context) {
 			}
 			sub.client.onReplayComplete()
 		case event := <-s.ingressCh.Out():
-			if !s.admit(event) {
+			if !s.canAdmit(event) || !event.isLive() {
 				// Rejected duplicates are not paced: the sibling replica's copy
-				// of an event should not cost the viewer a tick.
+				// or a dead replica's queued work should not cost the viewer a tick.
 				continue
 			}
-			s.setPending(event.Header.SenderComponent, true)
+			s.setPending(event)
 			if s.pacer != nil && !s.pacer.Wait(ctx) {
 				return
 			}
+			if !event.isLive() {
+				s.setPending(nil)
+				continue
+			}
+			s.commit(event)
 
 			// Sequence onto a copy. The sender still holds the original as its
 			// inflight event, so mutating it here would be a data race and would
@@ -122,7 +127,7 @@ func (s *Sequencer) Run(ctx context.Context) {
 			for _, client := range s.clients {
 				client.onSequencerEvent(sequenced)
 			}
-			s.setPending(event.Header.SenderComponent, false)
+			s.setPending(nil)
 		}
 	}
 }
@@ -132,17 +137,20 @@ func (s *Sequencer) Run(ctx context.Context) {
 func (s *Sequencer) HasPendingEmission(component string) bool {
 	s.pendingMu.RLock()
 	defer s.pendingMu.RUnlock()
-	return s.pending[component]
+	event := s.pending[component]
+	return event != nil && event.isLive()
 }
 
-func (s *Sequencer) setPending(component string, pending bool) {
+func (s *Sequencer) setPending(event *Event) {
 	s.pendingMu.Lock()
 	defer s.pendingMu.Unlock()
-	if pending {
-		s.pending[component] = true
+	if event != nil {
+		s.pending[event.Header.SenderComponent] = event
 		return
 	}
-	delete(s.pending, component)
+	for component := range s.pending {
+		delete(s.pending, component)
+	}
 }
 
 // Sequence returns the number of events admitted so far. Only safe to call once
@@ -157,9 +165,10 @@ func (s *Sequencer) EventLog() []*Event {
 	return s.eventLog
 }
 
-// admit applies the per-component duplicate and gap check, and advances the
-// high-water mark only for events it accepts.
-func (s *Sequencer) admit(event *Event) bool {
+// canAdmit applies the per-component duplicate and gap check without mutating
+// the high-water mark. A paced event is committed only after it is about to be
+// sequenced, so killing its origin can withdraw it while it waits for a beat.
+func (s *Sequencer) canAdmit(event *Event) bool {
 	hwm, seen := s.senderSeqHwm[event.Header.SenderComponent]
 	switch {
 	case !seen && event.Header.SenderSeq == 0:
@@ -175,9 +184,14 @@ func (s *Sequencer) admit(event *Event) bool {
 		)
 		return false
 	}
-	s.senderSeqHwm[event.Header.SenderComponent] = event.Header.SenderSeq
 	return true
 }
+
+func (s *Sequencer) commit(event *Event) {
+	s.senderSeqHwm[event.Header.SenderComponent] = event.Header.SenderSeq
+}
+
+func (e *Event) isLive() bool { return e.origin == nil || e.origin.isActive() }
 
 func (s *Sequencer) dropClient(client *SequencerClient) {
 	for i, subscribed := range s.clients {

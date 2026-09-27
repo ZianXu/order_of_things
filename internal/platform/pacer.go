@@ -35,8 +35,6 @@ type Pacer struct {
 	// fanout. Advancing it by one interval per admission prevents delivery work
 	// from accumulating into musical drift.
 	nextBeat       time.Time
-	remaining      time.Duration
-	frozenBeat     bool
 	waiting        bool
 	waitGeneration uint64
 }
@@ -122,7 +120,6 @@ func (p *Pacer) Pause() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.running = false
-	p.holdBeatLocked()
 	p.wakeLocked()
 }
 
@@ -133,10 +130,9 @@ func (p *Pacer) Resume() {
 	if p.running {
 		return
 	}
-	if p.frozenBeat {
-		p.nextBeat = time.Now().Add(p.remaining)
-		p.frozenBeat = false
-	}
+	// The soundtrack continues during a user pause, so resume at the next beat
+	// on its existing grid rather than preserving time from a paused clock.
+	p.alignNextBeatLocked(time.Now())
 	p.running = true
 	p.wakeLocked()
 }
@@ -152,8 +148,6 @@ func (p *Pacer) Begin() {
 	}
 	p.credits++
 	p.running = true
-	p.remaining = 0
-	p.frozenBeat = false
 	p.nextBeat = time.Now().Add(p.interval)
 	p.wakeLocked()
 }
@@ -165,8 +159,6 @@ func (p *Pacer) SetInterval(interval time.Duration) {
 	defer p.mu.Unlock()
 	p.interval = interval
 	// A changed tempo starts a fresh beat immediately.
-	p.remaining = 0
-	p.frozenBeat = false
 	p.nextBeat = time.Time{}
 	p.waiting = false
 	p.wakeLocked()
@@ -179,7 +171,6 @@ func (p *Pacer) Step() {
 	defer p.mu.Unlock()
 	p.credits++
 	p.running = false
-	p.holdBeatLocked()
 	p.wakeLocked()
 }
 
@@ -199,14 +190,12 @@ func (p *Pacer) wakeLocked() {
 	p.resumed = make(chan struct{})
 }
 
-func (p *Pacer) holdBeatLocked() {
-	if p.nextBeat.IsZero() {
+// alignNextBeatLocked skips missed beats and leaves nextBeat at the first one
+// strictly after now. The caller holds p.mu.
+func (p *Pacer) alignNextBeatLocked(now time.Time) {
+	if p.nextBeat.IsZero() || p.interval <= 0 || p.nextBeat.After(now) {
 		return
 	}
-	p.remaining = time.Until(p.nextBeat)
-	if p.remaining < 0 {
-		p.remaining = 0
-	}
-	p.frozenBeat = true
-	p.waiting = false
+	missed := now.Sub(p.nextBeat)/p.interval + 1
+	p.nextBeat = p.nextBeat.Add(missed * p.interval)
 }

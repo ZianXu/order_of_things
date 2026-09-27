@@ -3,6 +3,7 @@ package platform
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 
 	"golang.design/x/chann"
 )
@@ -39,6 +40,7 @@ type SequencerClient struct {
 	senderComponent   string
 	senderComponentId string
 	closed            bool
+	active            atomic.Bool
 	quarantined       bool
 	senderSeq         int64
 	inflightEvent     *Event
@@ -56,7 +58,7 @@ func NewSequencerClient(
 	senderComponentId string,
 	sequencer *Sequencer,
 ) *SequencerClient {
-	return &SequencerClient{
+	client := &SequencerClient{
 		senderComponent:   senderComponent,
 		senderComponentId: senderComponentId,
 		senderSeq:         0,
@@ -64,6 +66,8 @@ func NewSequencerClient(
 		ingressCh:         sequencer.IngressCh(),
 		egressCh:          chann.New[*Event](),
 	}
+	client.active.Store(true)
+	return client
 }
 
 // Send publishes a payload to the sequencer. The payload must be a comparable
@@ -91,6 +95,7 @@ func (c *SequencerClient) Send(payload any) {
 			SenderSeq:       c.senderSeq,
 		},
 		Payload: payload,
+		origin:  c,
 	}
 	c.inflightEvent = event
 	// In a real deployment this would go over the network.
@@ -162,8 +167,11 @@ func (c *SequencerClient) Close() {
 		return
 	}
 	c.closed = true
+	c.active.Store(false)
 	c.sequencer.unsubscribe(c)
 }
+
+func (c *SequencerClient) isActive() bool { return c.active.Load() }
 
 // IsQuarantined reports whether this replica removed itself from the pair after
 // detecting divergence. Read it from the component's own goroutine, or after that

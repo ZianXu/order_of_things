@@ -144,6 +144,36 @@ func TestRoundTakesFourVisibleSteps(t *testing.T) {
 	}
 }
 
+// Once both replicas have been killed, their already-computed but unsequenced
+// decisions are withdrawn. A step must not let a dead player act merely because
+// it saw the new-game event before it was killed.
+func TestKillingBothReplicasWithdrawsAQueuedDecision(t *testing.T) {
+	s, _ := started(t, session.Config{Seed: 42, Games: 1, Replicas: 2, StartPaused: true})
+
+	s.Step() // new game: both players light up and each active replica computes
+	waitFor(t, "the new game", func() bool {
+		return s.Tracker().Snapshot().CurrentGame != nil
+	})
+	game := s.Tracker().Snapshot().CurrentGame
+	next := string(game.NextToMove())
+	for _, replica := range []string{"r0", "r1"} {
+		if err := s.Kill(next, replica); err != nil {
+			t.Fatalf("killing %s/%s: %v", next, replica, err)
+		}
+	}
+
+	waitFor(t, "the dead player to stall the game", func() bool {
+		stalled, on := s.Stalled()
+		return stalled && on == next
+	})
+	held := s.Tracker().Snapshot().Seq
+	s.Step()
+	time.Sleep(30 * time.Millisecond)
+	if got := s.Tracker().Snapshot().Seq; got != held {
+		t.Errorf("step admitted seq %d after both %s replicas died, want %d", got, next, held)
+	}
+}
+
 func TestSetIntervalTakesEffectImmediately(t *testing.T) {
 	s, _ := started(t, session.Config{Seed: 42, Games: 100, Interval: time.Hour})
 

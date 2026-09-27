@@ -199,10 +199,6 @@ function sessionLost() {
 
 $("pause").addEventListener("click", () => {
   const running = state.status?.running ?? true;
-  if (musicAvailable) {
-    if (running) theme.pause();
-    else theme.play().catch(() => { /* the game still works without audio */ });
-  }
   control(running ? "pause" : "resume");
 });
 $("step").addEventListener("click", () => control("step"));

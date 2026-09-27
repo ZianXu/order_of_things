@@ -129,20 +129,22 @@ func TestPacerBeginReleasesTheFirstBeatImmediately(t *testing.T) {
 	}
 }
 
-func TestPacerResumeKeepsTheRemainderOfTheBeat(t *testing.T) {
-	pacer := NewPacer(300 * time.Millisecond)
+func TestPacerResumeWaitsForTheNextBeat(t *testing.T) {
+	const interval = 100 * time.Millisecond
+	pacer := NewPacer(interval)
 	ctx := context.Background()
 	admitted := make(chan bool, 1)
 	go func() { admitted <- pacer.Wait(ctx) }()
 
-	// Let part of the beat pass, then freeze it. The admission must not slip
-	// through while paused, and it must not restart a full beat on resume.
-	time.Sleep(100 * time.Millisecond)
+	// Let part of the beat pass, then leave it paused past several beats. The
+	// soundtrack keeps going, so resume must join its next beat rather than the
+	// instant it was clicked or a beat based on the paused remainder.
+	time.Sleep(interval / 4)
 	pacer.Pause()
 	select {
 	case <-admitted:
 		t.Fatal("Wait returned after pause")
-	case <-time.After(250 * time.Millisecond):
+	case <-time.After(3 * interval):
 	}
 
 	resumed := time.Now()
@@ -152,10 +154,10 @@ func TestPacerResumeKeepsTheRemainderOfTheBeat(t *testing.T) {
 		if !ok {
 			t.Error("Wait returned false after Resume")
 		}
-		if elapsed := time.Since(resumed); elapsed >= 260*time.Millisecond {
-			t.Errorf("resume waited %v, want the remaining beat rather than a fresh 300ms beat", elapsed)
+		if elapsed := time.Since(resumed); elapsed < interval/5 || elapsed > interval {
+			t.Errorf("resume waited %v, want the next beat on the existing grid", elapsed)
 		}
-	case <-time.After(500 * time.Millisecond):
+	case <-time.After(2 * interval):
 		t.Fatal("Wait did not return after Resume")
 	}
 }
