@@ -15,10 +15,10 @@
   <p>Four players, eleven components, everyone on its own goroutine. Kill a replica
      mid&#8209;game. Restart it. Bring one back corrupted. The tournament
      still ends exactly the same way.</p>
-  <p>That is not luck, and it is not about the fixed random seed. It is that every
-     component is a state machine fed one ordered log, so they all build the same
-     states over time &mdash; and one that builds it <em>wrong</em> on boot can be
-     caught before it is trusted again. Replay as a debugger.</p>
+  <p>This tiny system makes a few core distributed-systems ideas tangible: high
+     availability, replayability, graceful degradation, and determinism. It also
+     gives you the rare chance to step through how they interact, turning a
+     distributed system into something you can debug in plain sight.</p>
   <button class="primary" id="play">Play</button>
 
   <p class="credit">
