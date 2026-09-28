@@ -563,8 +563,17 @@ func (s *Session) Resume() { s.pacer.Resume() }
 // continues at its configured pace.
 func (s *Session) Begin() { s.pacer.Begin() }
 
-// Step admits exactly one event and leaves the session paused.
-func (s *Session) Step() { s.pacer.Step() }
+// Step admits one waiting event and leaves the session paused. It reports
+// whether it released work. A click while no live event is waiting is
+// intentionally ignored rather than saved as credit: after a stalled replica
+// recovers, an operator must explicitly step its work.
+func (s *Session) Step() bool {
+	if !s.sequencer.HasAnyPendingEmission() {
+		return false
+	}
+	s.pacer.Step()
+	return true
+}
 
 // SetInterval changes the time between admissions, taking effect immediately.
 func (s *Session) SetInterval(interval time.Duration) { s.pacer.SetInterval(interval) }

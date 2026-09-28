@@ -141,6 +141,20 @@ func (s *Sequencer) HasPendingEmission(component string) bool {
 	return event != nil && event.isLive()
 }
 
+// HasAnyPendingEmission reports whether an emission is currently waiting for
+// its pacing permission. It includes work whose origin just died, so one Step
+// can drain that withdrawn event; later clicks still cannot bank credit.
+func (s *Sequencer) HasAnyPendingEmission() bool {
+	s.pendingMu.RLock()
+	defer s.pendingMu.RUnlock()
+	for _, event := range s.pending {
+		if event != nil {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Sequencer) setPending(event *Event) {
 	s.pendingMu.Lock()
 	defer s.pendingMu.Unlock()

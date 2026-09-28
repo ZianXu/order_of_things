@@ -169,7 +169,12 @@ func (p *Pacer) SetInterval(interval time.Duration) {
 func (p *Pacer) Step() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.credits++
+	// A click may race the sequencer consuming the previous click. Keep at most
+	// one permission outstanding, so repeated clicks cannot bank a run of future
+	// admissions while the same event is still waiting.
+	if p.credits == 0 {
+		p.credits = 1
+	}
 	p.running = false
 	p.wakeLocked()
 }

@@ -112,7 +112,7 @@ func TestRoundTakesFourVisibleSteps(t *testing.T) {
 	s, _ := started(t, session.Config{Seed: 42, Games: 1, StartPaused: true})
 
 	step := func(seq int64) {
-		s.Step()
+		waitFor(t, "an event to be waiting", func() bool { return s.Step() })
 		waitFor(t, "a stepped event", func() bool {
 			return s.Tracker().Snapshot().Seq >= seq
 		})
@@ -150,7 +150,8 @@ func TestRoundTakesFourVisibleSteps(t *testing.T) {
 func TestKillingBothReplicasWithdrawsAQueuedDecision(t *testing.T) {
 	s, _ := started(t, session.Config{Seed: 42, Games: 1, Replicas: 2, StartPaused: true})
 
-	s.Step() // new game: both players light up and each active replica computes
+	waitFor(t, "the first event to be waiting", func() bool { return s.Step() })
+	// New game: both players light up and each active replica computes.
 	waitFor(t, "the new game", func() bool {
 		return s.Tracker().Snapshot().CurrentGame != nil
 	})
@@ -167,11 +168,54 @@ func TestKillingBothReplicasWithdrawsAQueuedDecision(t *testing.T) {
 		return stalled && on == next
 	})
 	held := s.Tracker().Snapshot().Seq
-	s.Step()
+	waitFor(t, "the first event to be waiting", func() bool { return s.Step() })
 	time.Sleep(30 * time.Millisecond)
 	if got := s.Tracker().Snapshot().Seq; got != held {
 		t.Errorf("step admitted seq %d after both %s replicas died, want %d", got, next, held)
 	}
+}
+
+func TestStepsDuringAStallDoNotBankCreditsForRecovery(t *testing.T) {
+	s, _ := started(t, session.Config{Seed: 42, Games: 1, Replicas: 2, StartPaused: true})
+
+	waitFor(t, "the first event to be waiting", func() bool { return s.Step() })
+	waitFor(t, "the new game", func() bool {
+		return s.Tracker().Snapshot().CurrentGame != nil
+	})
+	next := string(s.Tracker().Snapshot().CurrentGame.NextToMove())
+	for _, replica := range []string{"r0", "r1"} {
+		if err := s.Kill(next, replica); err != nil {
+			t.Fatalf("killing %s/%s: %v", next, replica, err)
+		}
+	}
+	waitFor(t, "the dead player to stall the game", func() bool {
+		stalled, on := s.Stalled()
+		return stalled && on == next
+	})
+
+	// The first step releases the now-dead queued emission. Every subsequent
+	// click happens with nothing live waiting and must not be remembered.
+	waitFor(t, "the first event to be waiting", func() bool { return s.Step() })
+	for range 3 {
+		s.Step()
+	}
+	held := s.Tracker().Snapshot().Seq
+	if err := s.Restart(next, "r0"); err != nil {
+		t.Fatalf("restarting %s/r0: %v", next, err)
+	}
+	waitFor(t, "the recovered decision to wait for a step", func() bool {
+		stalled, _ := s.Stalled()
+		return !stalled
+	})
+	time.Sleep(30 * time.Millisecond)
+	if got := s.Tracker().Snapshot().Seq; got != held {
+		t.Fatalf("recovery advanced to seq %d without a new step, want %d", got, held)
+	}
+
+	waitFor(t, "the recovered decision to be waiting", func() bool { return s.Step() })
+	waitFor(t, "the recovered decision to be stepped", func() bool {
+		return s.Tracker().Snapshot().Seq == held+1
+	})
 }
 
 func TestSetIntervalTakesEffectImmediately(t *testing.T) {
